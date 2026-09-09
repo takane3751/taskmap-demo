@@ -1,0 +1,1220 @@
+<title>ORMAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#EDF0F4; --surface:#FFFFFF; --surface2:#F5F7FA; --line:#D6DCE5; --ink:#1A2130; --muted:#6B7789;
+  --accent:#158F7A; --accent-ink:#FFFFFF; --accent-soft:#DDF1EC;
+  --pri4:#D9482B; --pri3:#E09A2D; --pri2:#3F7FD1; --pri1:#98A3B3;
+  --link:#B9C2CF; --canvas:#E6EAF0; --grid:#D9DFE8; --shadow:0 6px 24px rgba(20,30,50,.14);
+  --done:#7BA98F; --ghost:#C7CDD6; --event:#7C3AED; --dim:#8A93A3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12171F; --surface:#1B222D; --surface2:#222A36; --line:#2E3745; --ink:#E8ECF2; --muted:#8B96A8;
+    --accent:#2FB59C; --accent-ink:#0E1A17; --accent-soft:#1C3A34;
+    --pri4:#F0623F; --pri3:#EFB04A; --pri2:#5D98E6; --pri1:#7C879A;
+    --link:#3A4556; --canvas:#161C26; --grid:#1F2734; --shadow:0 6px 24px rgba(0,0,0,.5);
+    --done:#5E8A73; --ghost:#3A4353; --event:#A78BFA; --dim:#5B6577;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12171F; --surface:#1B222D; --surface2:#222A36; --line:#2E3745; --ink:#E8ECF2; --muted:#8B96A8;
+  --accent:#2FB59C; --accent-ink:#0E1A17; --accent-soft:#1C3A34;
+  --pri4:#F0623F; --pri3:#EFB04A; --pri2:#5D98E6; --pri1:#7C879A;
+  --link:#3A4556; --canvas:#161C26; --grid:#1F2734; --shadow:0 6px 24px rgba(0,0,0,.5);
+  --done:#5E8A73; --ghost:#3A4353; --event:#A78BFA; --dim:#5B6577;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Kaku Gothic New",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:14px;line-height:1.5;overflow:hidden}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+select,input[type=text],input[type=email],input[type=number],input[type=date],input[type=datetime-local],input[type=search],textarea{font:inherit;color:var(--ink);background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;color-scheme:light dark}
+kbd{font-family:"IBM Plex Mono",monospace;font-size:11px;background:var(--surface2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;color:var(--ink)}
+h3.sec{margin:0 0 8px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* ---- shell: 左レール / 中央ステージ / 右の詳細（固定・全高） ---- */
+.app{display:grid;grid-template-rows:52px 1fr;grid-template-columns:236px 1fr 372px;height:100vh;height:100dvh}
+.top{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px}
+.brand b{font-weight:700;font-size:17px;letter-spacing:.06em}
+.brand small{color:var(--muted);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;line-height:1.15;display:block;border-left:1px solid var(--line);padding-left:8px}
+.seg{display:inline-flex;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{padding:5px 11px;border-radius:6px;color:var(--muted);font-weight:500;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg.theme button{padding:4px 9px;font-size:12px}
+.seg.theme button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.top .spacer{flex:1}
+.top .search{position:relative;width:min(300px,28vw)}
+.top .search input{padding-left:28px;background:var(--surface2)}
+.top .search::before{content:"⌕";position:absolute;left:9px;top:5px;color:var(--muted);font-size:15px}
+.iconbtn{width:34px;height:34px;border-radius:8px;display:inline-grid;place-items:center;color:var(--muted);font-weight:700;position:relative;font-size:15px}
+.top .iconbtn{width:38px;height:38px;font-size:20px}
+.top #btnHelp{font-size:18px}
+.iconbtn:hover{background:var(--surface2);color:var(--ink)}
+.iconbtn .n{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:var(--pri4);color:#fff;font-size:10px;display:grid;place-items:center;padding:0 4px}
+.avatarbtn{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:700;font-size:12px;display:grid;place-items:center}
+.mobile-only{display:none}
+
+.rail{background:var(--surface);border-right:1px solid var(--line);padding:14px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.field label{font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);font-size:12px;color:var(--muted)}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
+.teams{display:flex;flex-direction:column;gap:2px}
+.team{display:flex;align-items:center;gap:4px}
+.team>button.name{flex:1;text-align:left;padding:6px 8px;border-radius:8px;font-weight:500;display:flex;align-items:center;gap:8px;min-width:0}
+.team>button.name:hover{background:var(--surface2)}
+.team>button.name[aria-pressed="true"]{background:var(--accent-soft)}
+.team>button.name .cnt{margin-left:auto;font-size:11px;color:var(--muted);flex:none}
+.team .tg{width:26px;height:26px;border-radius:6px;color:var(--muted);font-size:11px;flex:none}
+.team .tg:hover{background:var(--surface2)}
+.members{display:flex;flex-direction:column;gap:2px;padding:2px 0 6px 14px}
+.members[hidden]{display:none}
+.person{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:8px;text-align:left;width:100%}
+.person:hover{background:var(--surface2)}
+.person[aria-current="true"]{outline:1.5px solid var(--accent)}
+.avatar{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;flex:none}
+.person .meta{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.person .meta small{color:var(--muted);font-size:11px}
+.ext,.exec{font-size:10px;border:1px dashed var(--muted);color:var(--muted);border-radius:4px;padding:0 4px;margin-left:4px}
+.exec{border-style:solid}
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface2);border-radius:8px;padding:8px 10px;text-align:left}
+.stat b{display:block;font-size:20px;font-weight:500;line-height:1.1}
+.stat span{font-size:11px;color:var(--muted)}
+.stat:hover{outline:1.5px solid var(--accent)}
+.rail .add{width:100%;border:1px dashed var(--line);border-radius:8px;padding:7px;color:var(--muted);font-size:12px}
+.rail .add:hover{color:var(--ink);border-color:var(--ink)}
+.clearf{font-size:11px;color:var(--accent);padding:0;text-decoration:underline}
+
+.stage{position:relative;background:var(--canvas);overflow:hidden}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+.hud{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;z-index:2}
+.hud button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 10px;box-shadow:var(--shadow);font-size:12px}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%;z-index:9}
+.toast.show{opacity:1}
+.quick{position:absolute;z-index:6;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:10px;display:none;width:280px}
+.quick.show{display:block}
+.quick .eyebrow{font-size:11px;color:var(--muted);margin-bottom:6px}
+.quick form{display:flex;gap:6px}
+.quick button[type=submit]{background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:0 12px;font-weight:500}
+
+/* AI アシスタント：ステージ右下のポップアップ */
+.aibox{position:absolute;right:12px;bottom:12px;width:min(400px,calc(100% - 24px));height:42%;max-height:calc(100% - 24px);min-height:56px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;z-index:4}
+.aibox .grip{height:10px;cursor:ns-resize;display:grid;place-items:center;flex:none}
+.aibox .grip::before{content:"";width:36px;height:4px;border-radius:2px;background:var(--line)}
+.aibox>header{display:flex;align-items:center;gap:8px;padding:0 12px 6px;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;flex:none}
+.aibox>header .iconbtn{width:26px;height:26px;margin-left:auto}
+.aibox.collapsed .body{display:none}
+.aibox.collapsed{height:auto!important}
+.aibox .body{flex:1;min-height:0;display:flex;flex-direction:column}
+.msgs{flex:1;overflow:auto;padding:0 14px 10px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:92%;padding:8px 11px;border-radius:12px;font-size:13px;white-space:pre-wrap}
+.msg.ai{background:var(--surface2);border-bottom-left-radius:4px;align-self:flex-start}
+.msg.me{background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px;align-self:flex-end}
+.msg .ref{display:inline-block;margin-top:6px;border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;background:var(--surface)}
+.suggest{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 6px}
+.suggest button{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;color:var(--muted)}
+.composer{display:flex;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--line)}
+.composer input{flex:1}
+.composer .mic{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted)}
+.composer .mic.on{background:var(--pri4);color:#fff;border-color:transparent}
+.composer .send{background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:0 14px;font-weight:500}
+
+/* 右：詳細パネル（固定・全高） */
+.panel{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.panel>header{display:flex;align-items:center;gap:8px;padding:12px 16px 8px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;flex:none}
+.panel>header .iconbtn{margin-left:auto;width:26px;height:26px}
+.detail{padding:0 16px 16px;overflow:auto;display:flex;flex-direction:column;gap:14px;flex:1}
+.detail .empty{color:var(--muted);font-size:13px}
+.detail h2{margin:0;font-size:16px;font-weight:700;text-wrap:balance}
+.detail h2 .val{font:inherit;padding:0 4px;margin:0 -4px}
+.detail .eyebrow{font-size:11px;color:var(--muted);letter-spacing:.06em}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;align-items:center}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;min-width:0}
+.val{border-radius:6px;padding:2px 6px;margin:-2px -6px;text-align:left;border:1px solid transparent}
+.val:hover{background:var(--surface2);border-color:var(--line)}
+.val::after{content:"✎";font-size:10px;color:var(--muted);margin-left:6px;opacity:0}
+.val:hover::after{opacity:1}
+.kv input,.kv select{padding:3px 6px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--line)}
+.badge .dot{width:8px;height:8px;border-radius:50%}
+button.badge:hover{background:var(--surface2)}
+.progress{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent)}
+.subtasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.subtasks li{display:flex;gap:8px;align-items:center}
+.subtasks li.done{color:var(--muted);text-decoration:line-through}
+.subtasks li button.chk{width:14px;height:14px;border-radius:3px;border:1.5px solid var(--muted);flex:none;padding:0}
+.subtasks li.done button.chk{background:var(--done);border-color:var(--done)}
+.links{display:flex;flex-direction:column;gap:6px}
+.linkrow{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:8px;padding:7px 10px;font-size:12px}
+.linkrow .ic{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;flex:none}
+.linkrow .path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.linkrow .inh{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+.linkrow button.open{background:var(--accent);color:var(--accent-ink);border-radius:6px;padding:4px 10px;font-weight:500;font-size:12px}
+.linkrow button.x{color:var(--muted);padding:0 4px}
+.addlink{display:flex;gap:6px;align-items:center}
+.addlink select{width:auto;flex:1}
+.addlink input{flex:2}
+.addlink button{border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:12px;background:var(--surface2)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions button{border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;background:var(--surface2)}
+.actions button.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.actions button.danger{color:var(--pri4)}
+.memo{width:100%;min-height:80px;resize:vertical;line-height:1.5}
+.memo-hint{font-size:11px;color:var(--muted);margin-top:4px}
+.cal{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:12px}
+.cal .g{width:20px;height:20px;border-radius:5px;background:#fff;color:#1a73e8;display:grid;place-items:center;font-weight:700;font-size:11px;border:1px solid var(--line)}
+.hist{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+
+/* 案件ボード / カンバン / ガント */
+.board{position:absolute;left:12px;right:404px;bottom:12px;height:46%;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:none;flex-direction:column;min-height:0;z-index:3}
+.board.show{display:flex}
+.board>header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.board>header .client{font-size:11px;color:var(--muted);letter-spacing:.06em}
+.board>header b{font-size:14px}
+.board>header .sum{color:var(--muted);font-size:12px;margin-left:auto}
+.board .cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,1fr);gap:10px;padding:10px;overflow:auto;flex:1;min-height:0}
+.kanban{position:absolute;inset:0;display:none;grid-auto-flow:column;grid-auto-columns:minmax(240px,1fr);gap:12px;padding:14px;overflow:auto}
+.kanban.show{display:grid}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0}
+.board .col{background:var(--surface2)}
+.col header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-weight:700;font-size:13px}
+.col header span{color:var(--muted);font-weight:500}
+.col.over{outline:2px dashed var(--accent);outline-offset:-4px}
+.col.nodrop{outline:2px dashed var(--pri4);outline-offset:-4px}
+.cards{padding:10px;display:flex;flex-direction:column;gap:8px;overflow:auto;flex:1;min-height:60px}
+.card{position:relative;background:var(--surface2);border:1px solid var(--line);border-radius:8px;padding:8px 10px 8px 14px;text-align:left;width:100%;cursor:grab}
+.card:active{cursor:grabbing}
+.card.dragging{opacity:.4}
+.board .card{background:var(--surface)}
+.card::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:4px;border-radius:2px;background:var(--stripe)}
+.card .t{font-weight:500;display:block}
+.card .m{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-top:4px;gap:8px}
+.card .m .who{display:flex;align-items:center;gap:4px}
+.card.over .due{color:var(--pri4);font-weight:500}
+.gantt{position:absolute;inset:0;display:none;flex-direction:column;background:var(--surface)}
+.gantt.show{display:flex}
+.gantt .gbar{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);flex-wrap:wrap}
+.gantt .gbar select{width:auto}
+.gwrap{flex:1;overflow:auto;position:relative}
+.gtable{display:grid;grid-template-columns:170px 1fr;min-width:max-content}
+.grow{display:contents}
+.gname{position:sticky;left:0;background:var(--surface);border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:6px 10px;display:flex;align-items:center;gap:8px;z-index:2;font-size:13px}
+.gname small{color:var(--muted);font-size:11px;display:block}
+.gcell{position:relative;border-bottom:1px solid var(--line);background:repeating-linear-gradient(90deg,transparent 0,transparent calc(var(--day) * 7 - 1px),var(--grid) calc(var(--day) * 7 - 1px),var(--grid) calc(var(--day) * 7))}
+.ghead .gname{border-bottom:2px solid var(--line);font-weight:700;background:var(--surface2)}
+.ghead .gcell{background:var(--surface2);border-bottom:2px solid var(--line)}
+.gweek{position:absolute;top:4px;font-size:11px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.gtoday{position:absolute;top:0;bottom:0;width:2px;background:var(--pri4);opacity:.7;z-index:1}
+.gtask{position:absolute;height:18px;border-radius:5px;color:#fff;font-size:11px;line-height:18px;padding:0 6px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;border:0;text-align:left}
+.gtask.wait{background:var(--surface)!important;color:var(--ink);border:1.5px dashed var(--muted)}
+.gtask.event{border-radius:2px;background:var(--event)!important}
+.gtask.done{opacity:.45}
+.gtask.dim{opacity:.15;filter:grayscale(1)}
+.gload{position:absolute;bottom:3px;height:8px;border-radius:2px}
+.gload span{position:absolute;left:4px;top:-13px;font-size:10px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.glegend{display:flex;gap:10px;align-items:center;margin-left:auto}
+.glegend i{display:inline-block;width:12px;height:8px;border-radius:2px;margin-right:3px;vertical-align:middle}
+
+/* ダイアログ・設定画面・通知・ログイン */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);padding:18px;width:min(92vw,540px);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(10,15,25,.45)}
+dialog h2{margin:0 0 12px;font-size:16px}
+dialog.wide{width:min(94vw,880px);height:min(88vh,680px);padding:0;overflow:hidden}
+dialog.wide[open]{display:flex}
+dialog .xclose{position:absolute;right:10px;top:10px;width:32px;height:32px;font-size:16px}
+dialog{position:relative}
+.snav{width:200px;background:var(--surface2);border-right:1px solid var(--line);padding:14px 8px;display:flex;flex-direction:column;gap:2px;flex:none}
+.snav button{text-align:left;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted)}
+.snav button[aria-current="true"]{background:var(--surface);color:var(--ink);font-weight:500}
+.snav .grp{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 10px 2px}
+.sbody{flex:1;overflow:auto;padding:18px 22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.sbody h2{display:flex;align-items:center;gap:10px}
+.sbody h2 .iconbtn{margin-left:auto}
+.list{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:13px}
+.row .grow{flex:1;min-width:0}
+.row small{color:var(--muted);font-size:11px;display:block}
+.row .act{display:flex;gap:6px;flex:none}
+.row .act button{border:1px solid var(--line);border-radius:6px;padding:3px 8px;font-size:12px;background:var(--surface)}
+.similar{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--muted);margin-bottom:10px}
+.similar b{color:var(--pri3)}
+.similar button{color:var(--accent);text-decoration:underline;padding:0}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;font-size:13px;align-items:center}
+.legend .sw{width:14px;height:14px;border-radius:50%;justify-self:center}
+.legend .sq{width:14px;height:14px;border-radius:4px;justify-self:center;border:2px solid var(--muted)}
+.legend .dia{width:12px;height:12px;justify-self:center;background:var(--event);transform:rotate(45deg)}
+.legend .sz{display:flex;align-items:center;gap:3px;justify-self:center}
+.legend .sz i{display:block;border-radius:50%;background:var(--muted)}
+.legend .arc{width:16px;height:8px;border:3px solid var(--muted);border-bottom:0;border-radius:8px 8px 0 0;justify-self:center}
+.sctable{width:100%;border-collapse:collapse;font-size:13px}
+.sctable td{padding:5px 6px;border-bottom:1px solid var(--line)}
+.sctable td:last-child{text-align:right}
+.sctable button.key.listening{outline:2px solid var(--accent)}
+.notif{position:absolute;right:12px;top:58px;width:360px;max-height:70vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);z-index:20;display:none;flex-direction:column}
+.notif.show{display:flex}
+.notif header{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:700;font-size:13px}
+.notif header button{margin-left:auto;font-size:12px;color:var(--accent)}
+.nitem{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);text-align:left;width:100%}
+.nitem.unread{background:var(--accent-soft)}
+.nitem .t{font-size:13px}
+.nitem small{color:var(--muted);font-size:11px;display:block}
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;place-items:center}
+.login.show{display:grid}
+.login .card{width:min(92vw,380px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;cursor:default}
+.login .card::before{display:none}
+.login h1{margin:0;font-size:22px}
+.login .prov{border:1px solid var(--line);border-radius:8px;padding:9px;font-weight:500;background:var(--surface2)}
+.login .prov.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.menu{position:absolute;right:12px;top:58px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:20;display:none;flex-direction:column;min-width:200px;padding:6px}
+.menu.show{display:flex}
+.menu button{text-align:left;padding:8px 10px;border-radius:6px;font-size:13px}
+.menu button:hover{background:var(--surface2)}
+.menu .hd{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px}
+.searchres{position:absolute;left:0;right:0;top:40px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:30;display:none;flex-direction:column;max-height:60vh;overflow:auto}
+.searchres.show{display:flex}
+.searchres button{text-align:left;padding:8px 12px;font-size:13px;border-bottom:1px solid var(--line)}
+.searchres button:hover{background:var(--surface2)}
+.searchres small{color:var(--muted);display:block;font-size:11px}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr}
+  .rail,.panel{position:absolute;top:52px;bottom:0;z-index:5;width:min(88vw,360px);box-shadow:var(--shadow);transform:translateX(-105%);transition:transform .25s}
+  .panel{right:0;left:auto;transform:translateX(105%);border-left:1px solid var(--line)}
+  .rail.open,.panel.open{transform:none}
+  .mobile-only{display:inline-grid}
+  .top .demo,.seg.theme,.top .search{display:none}
+  .board{left:0;right:0;bottom:0;height:60%;border-radius:12px 12px 0 0}
+  .aibox{left:0;right:0;bottom:0;width:auto;border-radius:12px 12px 0 0}
+  .notif,.menu{left:8px;right:8px;width:auto}
+  dialog.wide{flex-direction:column;height:92vh}
+  .snav{width:auto;flex-direction:row;overflow:auto;padding:8px}
+  .snav .grp{display:none}
+}
+@media (prefers-reduced-motion: reduce){ .rail,.panel,.toast{transition:none} }
+</style>
+<div class="app" id="app">
+  <header class="top">
+    <button class="iconbtn mobile-only" id="btnRail" aria-label="チーム・絞り込み">☰</button>
+    <div class="brand"><b>ORMAP</b><small>Visual<br>Task Manager</small></div>
+    <div class="seg" role="group" aria-label="ビュー">
+      <button id="vMap" aria-pressed="true">放射状</button>
+      <button id="vKanban" aria-pressed="false">カンバン</button>
+      <button id="vGantt" aria-pressed="false">ガント</button>
+    </div>
+    <div class="search"><input type="search" id="q" placeholder="案件・タスク・人を検索（/ でAI、Ctrl+K で検索）" autocomplete="off"><div class="searchres" id="searchres"></div></div>
+    <div class="spacer"></div>
+    <span id="focusName" style="font-weight:500;font-size:13px;color:var(--muted)"></span>
+    <div class="seg theme" role="group" aria-label="テーマ">
+      <button data-theme-set="system" aria-pressed="true">システム</button>
+      <button data-theme-set="light" aria-pressed="false">ライト</button>
+      <button data-theme-set="dark" aria-pressed="false">ダーク</button>
+    </div>
+    <button class="iconbtn" id="btnNotif" aria-label="通知">🔔<span class="n" id="notifN" hidden>0</span></button>
+    <button class="iconbtn" id="btnHelp" aria-label="読み方とショートカット">?</button>
+    <button class="iconbtn" id="btnSettings" aria-label="設定">⚙</button>
+    <button class="avatarbtn" id="btnMe" aria-label="アカウント"></button>
+    <button class="iconbtn mobile-only" id="btnPanel" aria-label="詳細">▤</button>
+  </header>
+
+  <aside class="rail" id="rail">
+    <section>
+      <h3 class="sec">チーム / メンバー</h3>
+      <div class="teams" id="teamList"></div>
+    </section>
+    <section>
+      <h3 class="sec">案件</h3>
+      <button class="add" id="btnNewProject">＋ 案件を作成（重複チェック付き）</button>
+    </section>
+    <section>
+      <h3 class="sec">絞り込み <button class="clearf" id="clearFilters">解除</button></h3>
+      <div class="field"><label for="fProject">案件</label><select id="fProject"></select></div>
+      <div class="field"><label for="fReq">依頼</label>
+        <select id="fReq"><option value="all">すべて</option><option value="sent">自分が依頼したタスク</option><option value="received">自分が依頼されたタスク</option></select></div>
+      <div class="field"><label for="fPeriod">期間</label>
+        <select id="fPeriod"><option value="all">すべて</option><option value="over">期限切れ</option><option value="today">今日まで</option><option value="week">今週（7日以内）</option><option value="month">今月（30日以内）</option></select></div>
+      <div class="field"><label for="fKind">種別</label>
+        <select id="fKind"><option value="all">タスクと予定</option><option value="task">タスクのみ</option><option value="event">予定のみ</option></select></div>
+      <div class="field"><label>優先度</label><div class="chips" id="fPri"></div></div>
+      <div class="field"><label class="chip" style="cursor:pointer"><input type="checkbox" id="fDone" style="margin:0"> 完了も表示</label></div>
+    </section>
+    <section>
+      <h3 class="sec">自分の残量（クリックで絞り込み）</h3>
+      <div class="summary">
+        <button class="stat" data-stat="open"><b id="sTasks" class="mono">0</b><span>未完了</span></button>
+        <button class="stat" data-stat="hours"><b id="sHours" class="mono">0h</b><span>残り工数</span></button>
+        <button class="stat" data-stat="sent"><b id="sWait" class="mono">0</b><span>依頼中（対応待ち）</span></button>
+        <button class="stat" data-stat="received"><b id="sRecv" class="mono">0</b><span>依頼された（自分待ち）</span></button>
+      </div>
+    </section>
+  </aside>
+
+  <main class="stage" id="stage">
+    <canvas id="cv" aria-label="放射状タスクマップ"></canvas>
+    <div class="kanban" id="kanban"></div>
+    <div class="gantt" id="gantt">
+      <div class="gbar">
+        <span>行：</span><select id="gMode"><option value="person">スタッフ別（空き・繁忙）</option><option value="project">案件別</option></select>
+        <span>週の稼働上限 <input type="number" id="gCap" value="25" min="5" max="60" style="width:56px;padding:3px 6px"> h</span>
+        <div class="glegend"><span><i style="background:var(--accent)"></i>余裕</span><span><i style="background:var(--pri3)"></i>50〜100%</span><span><i style="background:var(--pri4)"></i>超過</span><span><i style="background:var(--event)"></i>予定</span></div>
+      </div>
+      <div class="gwrap" id="gwrap"></div>
+    </div>
+    <section class="board" id="board" aria-label="案件ボード"></section>
+    <div class="quick" id="quick"><div class="eyebrow" id="quickEyebrow"></div><form id="quickForm"><input type="text" id="quickTitle" placeholder="タスク名を入力して Enter" autocomplete="off" required><button type="submit">追加</button></form></div>
+    <div class="hud">
+      <button id="zoomIn" aria-label="拡大">＋</button>
+      <button id="zoomOut" aria-label="縮小">－</button>
+      <button id="zoomFit">全員</button>
+      <button id="zoomHome">自分へ</button>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <section class="aibox" id="aiBox">
+      <div class="grip" id="aiGrip" title="ドラッグで高さを変更"></div>
+      <header>AI アシスタント <span style="font-weight:400;text-transform:none;letter-spacing:0" id="aiMode">（デモ：ルールベース）</span><button class="iconbtn" id="aiCollapse" aria-label="折りたたみ">—</button></header>
+      <div class="body"><div class="msgs" id="msgs"></div><div class="suggest" id="suggest"></div>
+        <form class="composer" id="composer"><button type="button" class="mic" id="mic" aria-label="音声入力">🎙</button><input type="text" id="chatIn" placeholder="話しかけるように入力…" autocomplete="off"><button type="submit" class="send">送信</button></form></div>
+    </section>
+    <div class="notif" id="notif"><header>通知 <button id="notifReadAll">すべて既読</button></header><div id="notifList"></div></div>
+    <div class="menu" id="meMenu"></div>
+    <div class="login" id="login"><div class="card">
+      <h1>ORMAP にサインイン</h1><p style="margin:0;color:var(--muted);font-size:13px">パスワードは使いません。メールに届くリンク、または Google / Apple でサインインします。</p>
+      <input type="email" id="loginEmail" placeholder="メールアドレス" value="sasaki@example.co.jp">
+      <button class="prov primary" id="loginMagic">メールにサインインリンクを送る</button>
+      <button class="prov" id="loginGoogle">Google でサインイン</button>
+      <button class="prov" id="loginApple">Apple でサインイン</button>
+      <small style="color:var(--muted)">デモではどのボタンでもすぐにサインインします。</small>
+    </div></div>
+  </main>
+
+  <aside class="panel" id="panel">
+    <header>詳細 <button class="iconbtn mobile-only" id="panelClose" aria-label="閉じる">✕</button></header>
+    <div class="detail" id="detail"></div>
+  </aside>
+</div>
+
+<dialog id="dlgProject">
+  <form method="dialog" id="frmProject">
+    <h2 id="dlgProjectTitle">案件を作成</h2>
+    <div class="field"><label for="npName">案件名</label><input type="text" id="npName" placeholder="例：CRM構築 フェーズ2" autocomplete="off" required></div>
+    <div class="similar" id="npSimilar" hidden></div>
+    <div class="field"><label for="npClient">クライアント</label><select id="npClient"></select></div>
+    <div class="field"><label>チーム（複数可）</label><div class="chips" id="npTeams"></div></div>
+    <div class="field"><label>メンバー（作成者は自動で参加）</label><div class="chips" id="npMembers"></div></div>
+    <div class="field"><label for="npPri">優先度</label><select id="npPri"><option value="4">最優先</option><option value="3">優先</option><option value="2" selected>通常</option><option value="1">急がない</option></select></div>
+    <div class="field"><label for="npVis">公開範囲</label><select id="npVis"><option value="org">組織の全員</option><option value="team">チーム内</option><option value="members">案件メンバーのみ</option><option value="private">自分だけ</option></select></div>
+    <div class="actions" style="justify-content:flex-end"><button type="button" id="npCancel">キャンセル</button><button type="submit" class="primary" id="npSubmit">作成</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgPick"><h2 id="pickTitle"></h2><div class="chips" id="pickChips"></div><div class="actions" style="justify-content:flex-end;margin-top:14px"><button id="pickCancel">キャンセル</button><button class="primary" id="pickOk">決定</button></div></dialog>
+<dialog id="dlgConfirm"><h2 id="confirmTitle"></h2><p id="confirmBody" style="margin:0 0 14px;color:var(--muted);font-size:13px"></p><div class="actions" style="justify-content:flex-end"><button id="confirmNo">キャンセル</button><button class="primary danger" id="confirmYes">実行</button></div></dialog>
+<dialog id="dlgDelegate"><form method="dialog" id="frmDelegate"><h2>依頼する</h2><div class="field"><label>依頼先</label><div class="chips" id="dgWho"></div></div><div class="field"><label for="dgDue">いつまでに</label><input type="date" id="dgDue"></div><div class="field"><label for="dgMsg">メッセージ</label><textarea id="dgMsg" rows="2" placeholder="背景や期待する成果物など"></textarea></div><div class="actions" style="justify-content:flex-end"><button type="button" id="dgCancel">キャンセル</button><button type="submit" class="primary">依頼を送る</button></div></form></dialog>
+<dialog id="dlgEvent"><form method="dialog" id="frmEvent"><h2>予定を追加</h2><div class="field"><label for="evTitle">件名</label><input type="text" id="evTitle" required placeholder="例：◯◯さま 訪問"></div><div class="field"><label for="evProject">案件</label><select id="evProject"></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="field"><label for="evStart">開始</label><input type="datetime-local" id="evStart"></div><div class="field"><label for="evEnd">終了</label><input type="datetime-local" id="evEnd"></div></div><div class="field"><label for="evPlace">場所</label><input type="text" id="evPlace"></div><div class="field"><label for="evRepeat">繰り返し</label><select id="evRepeat"><option value="none">なし</option><option value="weekly">毎週</option><option value="biweekly">2週ごと</option><option value="monthly">毎月</option></select></div><label class="chip" style="cursor:pointer"><input type="checkbox" id="evCal" checked style="margin:0"> Google カレンダーにも登録</label><div class="actions" style="justify-content:flex-end;margin-top:10px"><button type="button" id="evCancel">キャンセル</button><button type="submit" class="primary">追加</button></div></form></dialog>
+
+<dialog id="dlgHelp">
+  <button class="iconbtn xclose" data-xclose aria-label="閉じる">✕</button>
+  <h2>マップの読み方</h2>
+  <div class="legend">
+    <span class="sw" style="background:var(--accent)"></span><span>中心 ＝ 自分。スタッフも同じ縮尺・同じ描き方で周囲に並ぶ。人をクリックで、その人が中央に来るよう移動</span>
+    <span class="sq"></span><span>角丸四角 ＝ 案件。円周に占める幅 ＝ 総工数の平方根比。クリックで案件ボード（ドラッグでステータス変更）</span>
+    <span class="sw" style="background:var(--muted)"></span><span>丸 ＝ タスク。タスクから伸びる丸 ＝ 連なる次のタスク</span>
+    <span class="dia"></span><span>ひし形 ＝ 予定（出張・訪問・イベント）。カレンダーと同期</span>
+    <span class="sz"><i style="width:6px;height:6px"></i><i style="width:10px;height:10px"></i><i style="width:14px;height:14px"></i></span><span>大きさ ＝ 工数</span>
+    <span class="mono" style="font-size:12px">◎</span><span>中心に近い ＝ 優先度が高い（案件も、案件内のタスクも）</span>
+    <span class="sw" style="background:var(--pri4)"></span><span>最優先 ／ <span style="color:var(--pri3)">■</span> 優先 ／ <span style="color:var(--pri2)">■</span> 通常 ／ <span style="color:var(--pri1)">■</span> 急がない</span>
+    <span class="sw" style="border:2px dashed var(--muted)"></span><span>点線の丸 ＝ 依頼中・対応待ち。スタッフ間の破線 ＝ 依頼したタスク同士</span>
+    <span class="sw" style="background:var(--ghost)"></span><span>灰色 ＝ 非公開のタスク（あることだけ分かる）。薄い表示 ＝ 絞り込みに該当しない</span>
+    <span class="arc"></span><span>内側の弧 ＝ クライアント</span>
+    <span class="mono" style="font-size:12px">＋</span><span>選択中の案件・タスクの端の ＋ ＝ その下（次）にタスクを追加</span>
+  </div>
+  <h2 style="margin-top:18px">ショートカット <button class="badge" id="btnScEdit" style="margin-left:8px">変更する</button> <button class="badge" id="btnScReset">初期値に戻す</button></h2>
+  <table class="sctable" id="scTable"></table>
+</dialog>
+
+<dialog id="dlgSettings" class="wide">
+  <nav class="snav" id="snav">
+    <div class="grp">個人</div>
+    <button data-sec="profile" aria-current="true">プロフィール</button>
+    <button data-sec="appearance">表示・テーマ</button>
+    <button data-sec="shortcuts">ショートカット</button>
+    <button data-sec="notify">通知</button>
+    <button data-sec="ai">AI 連携（MCP / BYOK）</button>
+    <button data-sec="calendar">カレンダー連携</button>
+    <button data-sec="desk">ORMAP Desk（ローカル連携）</button>
+    <div class="grp">組織</div>
+    <button data-sec="org">組織</button>
+    <button data-sec="teams">チーム</button>
+    <button data-sec="members">メンバー</button>
+    <button data-sec="clients">クライアント</button>
+    <button data-sec="projects">案件一覧</button>
+    <button data-sec="data">データ</button>
+  </nav>
+  <div class="sbody" id="sbody"></div>
+</dialog>
+<script>
+/* ============ テーマ ============ */
+(function(){ let t='system'; try{ t=localStorage.getItem('ormap-theme')||'system'; }catch(e){} applyTheme(t,false); })();
+function applyTheme(t,save=true){ if(t==='system') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t); document.querySelectorAll('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.themeSet===t)); if(save){ try{localStorage.setItem('ormap-theme',t);}catch(e){} } if(window.__ready) draw(); }
+document.querySelectorAll('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(window.__ready) draw(); });
+const themeNow=()=>document.documentElement.getAttribute('data-theme')||'system';
+function cycleTheme(){ applyTheme({system:'light',light:'dark',dark:'system'}[themeNow()]); toast('テーマ：'+({system:'システム',light:'ライト',dark:'ダーク'}[themeNow()])); }
+
+/* ============ サンプルデータ（TODAY=2026-09-09） ============ */
+const TODAY = new Date('2026-09-09T09:00:00');
+const d = (n,h)=>{const x=new Date(TODAY); x.setDate(x.getDate()+n); if(h!=null) x.setHours(h,0,0,0); return x;};
+const fmt = dt=> dt ? `${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}` : '—';
+const fmtT = dt=> dt ? `${fmt(dt)} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '—';
+const daysTo = dt=> Math.round((dt - TODAY)/86400000);
+const toISO = dt=> dt? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`:'';
+const toISOT = dt=> dt? `${toISO(dt)}T${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`:'';
+const fromISO = s=> s? new Date(s+'T09:00:00'):null;
+const uid = ()=>'n'+Math.random().toString(36).slice(2,8);
+
+const ME='kj';
+const PRI = {4:{n:'最優先',v:'--pri4'},3:{n:'優先',v:'--pri3'},2:{n:'通常',v:'--pri2'},1:{n:'急がない',v:'--pri1'}};
+const STATUS = {todo:'未着手',doing:'進行中',waiting:'対応待ち',done:'完了'};
+const VIS = {org:'組織の全員',team:'チーム内',members:'案件メンバーのみ',private:'自分だけ',inherit:'案件の設定を引き継ぐ'};
+const LINK_KINDS = {
+  folder:  {label:'フォルダ',     ic:'📁', bg:'#5A6B85', open:v=>`Finder で ${v} を開きます`},
+  claude:  {label:'Claude Code',  ic:'◆',  bg:'#C9772E', open:v=>`Claude Code セッション「${v}」を再開します`},
+  url:     {label:'URL',          ic:'🌐', bg:'#3F7FD1', open:v=>`ブラウザで ${v} を開きます`},
+  obsidian:{label:'Obsidian',     ic:'◈',  bg:'#7C3AED', open:v=>`Obsidian でノート「${v}」を開きます`},
+  notion:  {label:'Notion',       ic:'N',  bg:'#1A2130', open:v=>`Notion ページ「${v}」を開きます`},
+  slack:   {label:'Slack',        ic:'#',  bg:'#4A154B', open:v=>`Slack ${v} を開きます`},
+  github:  {label:'GitHub',       ic:'⌥',  bg:'#24292F', open:v=>`GitHub ${v} を開きます`},
+  figma:   {label:'Figma',        ic:'F',  bg:'#F24E1E', open:v=>`Figma ファイル「${v}」を開きます`},
+  drive:   {label:'Google Drive', ic:'▲',  bg:'#1E8E3E', open:v=>`Google Drive で「${v}」を開きます`},
+  gcal:    {label:'Google カレンダー', ic:'G', bg:'#1A73E8', open:v=>`Google カレンダーで「${v}」を開きます`},
+  kikan:   {label:'基幹システム', ic:'基', bg:'#158F7A', open:v=>`基幹システムの案件 ${v} を開きます`},
+};
+let clients = [
+  {id:'fp', name:'クライアントA社', color:'#7A5CB8', code:'GT-C-0001'},
+  {id:'kitamura', name:'B社', color:'#2E8B9A', code:'GT-C-0002'},
+  {id:'muse', name:'C社', color:'#B86A3C', code:'GT-C-0003'},
+  {id:'nakatani', name:'D歯科', color:'#3C8F5E', code:'GT-C-0004'},
+  {id:'own', name:'自社', color:'#8A93A3', code:''},
+];
+let teams = [
+  {id:'exec', name:'経営', exec:true, members:['kj']},
+  {id:'dev', name:'開発チーム', members:['kj','st','ym']},
+  {id:'design', name:'デザインチーム', members:['sz','kj']},
+  {id:'biz', name:'業務チーム', members:['tn','kj']},
+];
+let people = [
+  {id:'kj', name:'佐々木', full:'佐々木 一郎', role:'専務・PM', color:'#158F7A', exec:true, email:'sasaki@example.co.jp', code:'U-9A2B-KJ01', orgRole:'owner'},
+  {id:'st', name:'佐藤', full:'佐藤（例）', role:'エンジニア', color:'#3F7FD1', email:'sato@example.jp', code:'U-3F7C-ST02', orgRole:'member'},
+  {id:'sz', name:'鈴木', full:'鈴木（例）', role:'デザイナー', color:'#B85CB0', email:'suzuki@example.jp', code:'U-B85C-SZ03', orgRole:'member'},
+  {id:'tn', name:'田中', full:'田中（例）', role:'営業・事務', color:'#C9772E', email:'tanaka@example.jp', code:'U-C977-TN04', orgRole:'admin'},
+  {id:'ym', name:'山本', full:'山本（外部・例）', role:'外部コーダー', color:'#6B7789', external:true, code:'U-4K7P-2MQ9', email:'yamamoto@freelance.example', orgRole:'member'},
+];
+let projects = [
+  {id:'inspection', code:'GT-2026-003', name:'検査アプリ', desc:'歯科向け検査アプリ', client:'own', entity:'サンプル社', calendar:'cal_gt', teams:['dev','design'], pri:4, start:d(-40), due:d(45), members:['kj','st','sz'], vis:'org', links:[{kind:'folder',value:'WORKSPACE/03_検査アプリ'},{kind:'claude',value:'inspection'},{kind:'github',value:'example/inspection'},{kind:'obsidian',value:'検査アプリ/'}]},
+  {id:'fpcrm', code:'GT-2026-001', name:'CRM構築', desc:'CRM 構築', client:'fp', teams:['dev'], pri:3, start:d(-90), due:d(20), members:['kj','st'], vis:'org', links:[{kind:'folder',value:'WORKSPACE/04_A社/CRM構築'},{kind:'slack',value:'#fp-crm'}]},
+  {id:'synctag', code:'GT-2026-005', name:'タグ同期', desc:'タグ同期システム', client:'kitamura', entity:'サンプル社', calendar:'cal_gt', teams:['dev','biz'], pri:3, start:d(-10), due:d(60), members:['kj','st','tn','ym'], ext_scope:'assigned', vis:'team', links:[{kind:'folder',value:'WORKSPACE/05_B社/タグ同期'},{kind:'kikan',value:'GT-2026-005'}]},
+  {id:'muse', code:'GT-2026-002', name:'C社 案件管理改修', desc:'既存システム改修', client:'muse', teams:['biz'], pri:2, start:d(-30), due:d(12), members:['kj','tn'], vis:'team', links:[{kind:'folder',value:'WORKSPACE/07_C社'},{kind:'kikan',value:'GT-2026-002'}]},
+  {id:'nakatani', code:'GT-2026-004', name:'D歯科 Web', desc:'Webサイト', client:'nakatani', teams:['design','biz'], pri:2, start:d(-20), due:d(6), members:['kj','sz','tn'], vis:'org', links:[{kind:'folder',value:'WORKSPACE/08_D歯科'},{kind:'url',value:'https://example-dental.example.jp'},{kind:'figma',value:'D歯科 TOP v3'}]},
+  {id:'kikan', code:'CM-2026-001', name:'基幹システム', desc:'自社・正規化マスター（非公開モジュール）', client:'own', entity:'共通', calendar:'cal_gt', teams:['dev','exec'], pri:1, start:d(-120), due:d(120), members:['kj','st'], vis:'members', links:[{kind:'folder',value:'WORKSPACE/_自社システム/基幹システム'}]},
+  {id:'internal_gt', code:'GT-2026-000', name:'社内（サンプル社）', desc:'案件に属さない社内予定・タスクの受け皿', client:'own', entity:'サンプル社', calendar:'cal_gt', teams:['exec'], pri:1, start:null, due:null, members:['kj','st','sz','tn'], vis:'org', links:[]},
+  {id:'internal_ps', code:'PS-2026-000', name:'社内（法人B）', desc:'法人B の受け皿', entity:'法人B', calendar:'cal_ps', teams:['exec'], pri:1, start:null, due:null, members:['kj'], vis:'private', owner:'kj', links:[]},
+  {id:'private', code:'IN-2026-000', name:'プライベート', desc:'案件に属さないもの', entity:'個人事業', calendar:'cal_pv', teams:[], pri:1, start:null, due:null, members:['kj'], vis:'private', owner:'kj', links:[]},
+];
+let tasks = [
+  {id:'t1', p:'inspection', title:'要件ヒアリング整理', a:'kj', pri:4, h:3, start:d(-3), due:d(1), st:'doing', links:[{kind:'obsidian', value:'検査アプリ/ヒアリングメモ 2026-09-05'},{kind:'notion', value:'検査アプリ 要件整理'}], memo:'先方の希望：検査結果は歯科医だけでなく衛生士も入力する。\n- 入力項目は6点法のみでよい\n- 紙カルテからの移行は対象外\n\n次回 9/12 に画面ラフを持って行く。'},
+  {id:'t2', p:'inspection', title:'画面設計（検査フロー）', a:'kj', pri:4, h:8, start:d(1), due:d(7), st:'todo', prev:'t1'},
+  {id:'t3', p:'inspection', title:'API仕様書 v1', a:'kj', pri:3, h:6, start:d(7), due:d(14), st:'todo', prev:'t2'},
+  {id:'t3b', p:'inspection', title:'見積の粗利計算', a:'kj', pri:2, h:1, start:d(2), due:d(6), st:'todo', vis:'private', memo:'社内向け。外注費の見込みを含む。'},
+  {id:'t4', p:'inspection', title:'検査結果画面のUIデザイン', a:'sz', pri:3, h:12, start:d(0), due:d(10), st:'doing', req:'kj', reqStatus:'accepted'},
+  {id:'t5', p:'inspection', title:'BLE接続の技術検証', a:'st', pri:4, h:16, start:d(-5), due:d(9), st:'doing', req:'kj', reqStatus:'accepted', links:[{kind:'github', value:'example/inspection#12'},{kind:'obsidian', value:'技術メモ/BLE 再接続の挙動'}], memo:'CoreBluetooth はバックグラウンドで restore が必要。iOS 17 で挙動が変わった点を検証レポートに含める。'},
+  {id:'t5a', p:'inspection', title:'対応チップの選定', a:'st', pri:3, h:3, due:d(2), st:'done', parent:'t5'},
+  {id:'t5b', p:'inspection', title:'iOS CoreBluetooth 疎通', a:'st', pri:4, h:5, due:d(5), st:'doing', parent:'t5'},
+  {id:'t5c', p:'inspection', title:'切断時の再接続テスト', a:'st', pri:3, h:4, due:d(8), st:'todo', parent:'t5'},
+  {id:'t5d', p:'inspection', title:'検証レポート作成', a:'st', pri:2, h:2, due:d(9), st:'todo', parent:'t5'},
+  {id:'t6', p:'fpcrm', title:'顧客インポートのバグ修正', a:'st', pri:4, h:4, start:d(-2), due:d(-1), st:'doing', req:'kj', reqStatus:'accepted'},
+  {id:'t7', p:'fpcrm', title:'月次レポート機能のレビュー', a:'kj', pri:3, h:2, start:d(2), due:d(4), st:'todo'},
+  {id:'t8', p:'fpcrm', title:'納品前の受入テスト立会い', a:'kj', pri:4, h:4, start:d(17), due:d(18), st:'todo', prev:'t7'},
+  {id:'t9', p:'synctag', title:'API認証まわりの調査', a:'st', pri:3, h:10, start:d(0), due:d(12), st:'doing', req:'kj', reqStatus:'accepted'},
+  {id:'t9a', p:'synctag', title:'既存APIの認証方式確認', a:'st', pri:3, h:2, due:d(2), st:'done', parent:'t9'},
+  {id:'t9b', p:'synctag', title:'OAuth2 vs APIキー 比較', a:'st', pri:3, h:3, due:d(5), st:'done', parent:'t9'},
+  {id:'t9c', p:'synctag', title:'トークン更新フロー設計', a:'st', pri:3, h:3, due:d(9), st:'doing', parent:'t9'},
+  {id:'t9d', p:'synctag', title:'サンプル実装', a:'st', pri:2, h:2, due:d(11), st:'todo', parent:'t9'},
+  {id:'t9e', p:'synctag', title:'佐々木へ報告', a:'st', pri:2, h:0.5, due:d(12), st:'todo', parent:'t9'},
+  {id:'t23', p:'synctag', title:'管理画面のマークアップ', a:'ym', pri:3, h:12, start:d(0), due:d(14), st:'doing', req:'kj', reqStatus:'accepted'},
+  {id:'t23a', p:'synctag', title:'一覧画面', a:'ym', pri:3, h:5, due:d(6), st:'done', parent:'t23'},
+  {id:'t23b', p:'synctag', title:'詳細画面', a:'ym', pri:3, h:5, due:d(11), st:'doing', parent:'t23'},
+  {id:'t23c', p:'synctag', title:'レスポンシブ調整', a:'ym', pri:2, h:2, due:d(14), st:'todo', parent:'t23'},
+  {id:'t10', p:'synctag', title:'キックオフ議事録の共有', a:'tn', pri:2, h:1, start:d(-1), due:d(1), st:'todo', req:'kj', reqStatus:'pending'},
+  {id:'t11', p:'synctag', title:'見積書ドラフト', a:'kj', pri:3, h:3, start:d(3), due:d(8), st:'todo'},
+  {id:'e1', p:'synctag', kind:'event', title:'B社さま 訪問（大阪出張）', a:'kj', pri:3, h:8, start:d(5,10), due:d(5,17), st:'todo', location:'大阪市北区 B社本社', calendar:'google', calId:'cal_gt', origin:'ormap', links:[{kind:'gcal',value:'B社さま 訪問'},{kind:'url',label:'乗換案内',value:'https://transit.example.jp/route?from=新横浜&to=新大阪'},{kind:'url',label:'ホテル予約',value:'https://hotel.example.jp/reservation/8817'}], memo:'Claude で調べた行程（9/14）\n- 新横浜 7:32 のぞみ → 新大阪 9:48\n- 新大阪 → 本社：御堂筋線 梅田 徒歩8分\n- 帰り 18:30 以降の便で予約済み\n\n持ち物：見積書ドラフト、タグ同期 デモ端末'},
+  {id:'t12', p:'muse', title:'見積書の内容確認', a:'kj', pri:3, h:1, start:d(0), due:d(2), st:'todo', req:'tn', reqStatus:'accepted', links:[{kind:'slack', value:'#muse-案件'}], memo:'田中さんより：保守費の月額を先方が気にしている。前回見積との差分を説明できるようにしておく。'},
+  {id:'t13', p:'muse', title:'改修範囲の再ヒアリング', a:'kj', pri:2, h:2, start:d(4), due:d(10), st:'todo'},
+  {id:'t14', p:'muse', title:'請求書発行', a:'tn', pri:2, h:1, start:d(10), due:d(12), st:'todo'},
+  {id:'t15', p:'nakatani', title:'トップ画像の差し替え', a:'sz', pri:3, h:3, start:d(-2), due:d(3), st:'doing', req:'kj', reqStatus:'accepted', links:[{kind:'drive', value:'08_D歯科/_資料/素材写真'}]},
+  {id:'t15a', p:'nakatani', title:'素材写真の選定', a:'sz', pri:3, h:1, due:d(0), st:'done', parent:'t15'},
+  {id:'t15b', p:'nakatani', title:'レタッチ・トリミング', a:'sz', pri:3, h:1.5, due:d(2), st:'doing', parent:'t15'},
+  {id:'t15c', p:'nakatani', title:'反映と確認依頼', a:'sz', pri:2, h:0.5, due:d(3), st:'todo', parent:'t15'},
+  {id:'t16', p:'nakatani', title:'公開前チェック', a:'kj', pri:4, h:2, start:d(4), due:d(5), st:'todo'},
+  {id:'e2', p:'nakatani', kind:'event', title:'公開報告 訪問', a:'kj', pri:2, h:2, start:d(8,14), due:d(8,16), st:'todo', location:'D歯科', calendar:'google', prev:'t16', links:[{kind:'gcal',value:'D歯科 訪問'}]},
+  {id:'t17', p:'nakatani', title:'ドメイン・サーバー契約', a:'tn', pri:4, h:1, start:d(-5), due:d(-2), st:'todo', req:'kj', reqStatus:'accepted'},
+  {id:'t18', p:'kikan', title:'Phase 0 環境構築', a:'st', pri:1, h:8, start:d(20), due:d(40), st:'todo'},
+  {id:'t19', p:'kikan', title:'連携プロトコル見直し', a:'kj', pri:1, h:4, start:d(30), due:d(60), st:'todo'},
+  {id:'t20', p:'private', title:'freee 月次仕訳チェック', a:'kj', pri:3, h:1.5, start:d(0), due:d(3), st:'todo', links:[{kind:'url',value:'https://secure.freee.co.jp/'}]},
+  {id:'t21', p:'private', title:'Apple Developer 更新', a:'kj', pri:2, h:0.5, start:d(20), due:d(28), st:'todo'},
+  {id:'e4', p:'inspection', kind:'event', title:'検査アプリ 週次定例', a:'kj', pri:2, h:1, start:d(-1,10), due:d(-1,11), st:'todo', repeat:'weekly', location:'Google Meet', calendar:'google', calId:'cal_gt', origin:'ormap', links:[{kind:'gcal',value:'検査アプリ 週次定例'},{kind:'url',label:'Meet',value:'https://meet.google.com/xxx-inspection'}], memo:'毎週月曜 10:00。議事録は AI 音声議事録で自動生成。'},
+  {id:'e5', p:'kikan', kind:'event', title:'月次 経営会議', a:'kj', pri:3, h:2, start:d(-8,14), due:d(-8,16), st:'todo', repeat:'monthly', location:'本社 会議室', calendar:'google', calId:'cal_gt', origin:'ormap'},
+  {id:'e6', p:'internal_ps', kind:'event', title:'法人B 税理士 打合せ', a:'kj', pri:2, h:1.5, start:d(2,15), due:d(2,16), st:'todo', location:'Zoom', calendar:'google', calId:'cal_ps', origin:'google', memo:'Google カレンダー（法人B）から取り込まれた予定。案件は受け皿「社内（法人B）」。'},
+  {id:'e7', p:'internal_gt', kind:'event', title:'採用面談（エンジニア）', a:'kj', pri:2, h:1, start:d(4,13), due:d(4,14), st:'todo', location:'本社', calendar:'google', calId:'cal_gt', origin:'google'},
+  {id:'e3', p:'private', kind:'event', title:'歯科定期検診', a:'kj', pri:2, h:1, start:d(3,18), due:d(3,19), st:'todo', calendar:'google', calId:'cal_pv', origin:'google'},
+  {id:'t22', p:'private', title:'勉強会スライド', a:'sz', pri:1, h:5, start:d(10), due:d(40), st:'todo'},
+];
+let notifications = [
+  {id:'n1', type:'request', text:'田中さんから「見積書の内容確認」を依頼されました（〜9/11）', task:'t12', at:d(-1,16), read:false},
+  {id:'n2', type:'progress', text:'佐藤さんの「API認証まわりの調査」が 2/5 まで進みました', task:'t9', at:d(-1,18), read:false},
+  {id:'n3', type:'due', text:'期限切れ：「顧客インポートのバグ修正」（佐藤・〜9/8）', task:'t6', at:d(0,8), read:false},
+  {id:'n4', type:'due', text:'明日期限：「要件ヒアリング整理」', task:'t1', at:d(0,9), read:true},
+  {id:'n5', type:'calendar', text:'Google カレンダーから「B社さま 訪問」の時刻が更新されました（10:00→10:00）', task:'e1', at:d(-2,12), read:true},
+];
+const history = {}; // taskId -> [{at, who, text}]
+function logHist(id,text,via='app'){ (history[id]=history[id]||[]).unshift({at:new Date(), who:ME, text, via}); }
+const org = {name:'株式会社サンプル', plan:'社内利用（段階2）', capacity:25, projectCreate:'all', dataRegion:'東京（ap-northeast-1）'};
+// Google カレンダーは「カレンダーの種類＝事業体」で仕分けている。各カレンダーを法人タグと受け皿案件に対応付ける
+let calendars = [
+  {id:'cal_gt', name:'サンプル社（仕事）', entity:'サンプル社', color:'#158F7A', sync:true, importTo:'internal_gt', primary:true},
+  {id:'cal_ps', name:'法人B', entity:'法人B', color:'#7A5CB8', sync:true, importTo:'internal_ps'},
+  {id:'cal_in', name:'個人事業', entity:'個人事業', color:'#C9772E', sync:true, importTo:'private'},
+  {id:'cal_pv', name:'プライベート', entity:'共通', color:'#98A3B3', sync:true, importTo:'private'},
+  {id:'cal_jp', name:'日本の祝日', entity:null, color:'#7C879A', sync:false, importTo:null},
+];
+const CA = id=>calendars.find(c=>c.id===id);
+const settings = {voice:{mode:'browser'}, calendar:{connected:true, calendar:'sasaki@example.co.jp', importPrivate:false}, ai:{mode:'mcp', provider:'anthropic', mcpUrl:'https://mcp.ormap.example/mcp', byok:false, model:'claude-sonnet-5'}, desk:{connected:true, terminal:'iTerm', version:'0.3.1'}, notify:{request:true, accepted:true, done:true, progress:false, due:true, digest:false}};
+
+/* ============ state / helpers ============ */
+const state = {view:'map', board:null, gmode:'person', gcap:25, selected:null, focus:ME, filters:{project:'all', team:null, req:'all', period:'all', kind:'all', pris:new Set([1,2,3,4]), done:false, text:''}};
+const P = id=>people.find(p=>p.id===id);
+const PR = id=>projects.find(p=>p.id===id);
+const CL = id=>clients.find(c=>c.id===id);
+const TM = id=>teams.find(t=>t.id===id);
+const T = id=>tasks.find(t=>t.id===id);
+const cssVar = v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const children = t=>tasks.filter(x=>x.parent===t.id);
+const progressOf = t=>{const c=children(t); return c.length? {done:c.filter(x=>x.st==='done').length,total:c.length}:null;};
+const isDelegated = t=>t.req && t.req!==t.a;
+const isEvent = t=>t.kind==='event';
+const REPEAT={none:'なし',weekly:'毎週',biweekly:'2週ごと',monthly:'毎月'};
+// 定例：直近の1回だけをマップ・カンバンに出す。開始/終了を「次回」に進めて返す
+function nextOccurrence(t){ if(!t.repeat||t.repeat==='none'||!t.start) return {start:t.start,due:t.due}; let s0=new Date(t.start), e0=new Date(t.due||t.start); const dur=e0-s0; const step=()=>{ if(t.repeat==='weekly') s0.setDate(s0.getDate()+7); else if(t.repeat==='biweekly') s0.setDate(s0.getDate()+14); else s0.setMonth(s0.getMonth()+1); }; let guard=0; while(s0.getTime()+dur < TODAY.getTime() && guard++<400) step(); return {start:new Date(s0),due:new Date(s0.getTime()+dur)}; }
+function occurrencesIn(t,from,to){ const out=[]; if(!t.repeat||t.repeat==='none'||!t.start){ out.push({start:t.start,due:t.due}); return out; } let s0=new Date(t.start); const dur=(t.due||t.start)-t.start; let guard=0; while(s0<to && guard++<400){ if(s0.getTime()+dur>=from.getTime()) out.push({start:new Date(s0),due:new Date(s0.getTime()+dur)}); if(t.repeat==='weekly') s0.setDate(s0.getDate()+7); else if(t.repeat==='biweekly') s0.setDate(s0.getDate()+14); else s0.setMonth(s0.getMonth()+1); } return out; }
+// 期限判定は定例なら次回の日付で
+const dueOf = t=> isEvent(t)&&t.repeat&&t.repeat!=='none' ? nextOccurrence(t).due : t.due;
+const startOf = t=> isEvent(t)&&t.repeat&&t.repeat!=='none' ? nextOccurrence(t).start : t.start;
+const teamsOf = pid=>teams.filter(t=>t.members.includes(pid)).map(t=>t.id);
+const isExec = pid=>!!P(pid).exec;
+const effVis = t=>{ const pr=PR(t.p); const v=t.vis||'inherit'; if(v!=='inherit') return v; return pr.vis==='private'?'private':'project'; };
+function visibility(viewer,t){
+  const v=P(viewer); const pr=PR(t.p);
+  if(t.a===viewer || t.req===viewer) return 'full';
+  if(v.external){ if(!pr.members.includes(viewer)) return 'none'; if(pr.ext_scope==='assigned') return 'none'; }
+  if(isExec(viewer)) return effVis(t)==='private' ? 'ghost' : 'full';
+  const shareTeam=(pr.teams||[]).some(tm=>teamsOf(viewer).includes(tm));
+  if(pr.vis==='private' && (pr.owner||pr.members[0])!==viewer) return 'ghost';
+  if(pr.vis==='members' && !pr.members.includes(viewer)) return 'ghost';
+  if(pr.vis==='team' && !shareTeam && !pr.members.includes(viewer)) return 'ghost';
+  if(pr.vis==='org' || shareTeam || pr.members.includes(viewer)) return effVis(t)==='private' ? 'ghost' : 'full';
+  return 'ghost';
+}
+function match(t){
+  const f=state.filters;
+  if(f.project!=='all' && t.p!==f.project) return false;
+  if(f.team && !(PR(t.p).teams||[]).includes(f.team)) return false;
+  if(!f.pris.has(t.pri)) return false;
+  if(!f.done && t.st==='done') return false;
+  if(f.kind==='task' && isEvent(t)) return false;
+  if(f.kind==='event' && !isEvent(t)) return false;
+  if(f.req==='sent' && !(t.req===ME && t.a!==ME)) return false;
+  if(f.req==='received' && !(t.a===ME && t.req && t.req!==ME)) return false;
+  if(f.text && !(t.title+' '+(t.memo||'')+' '+PR(t.p).name).toLowerCase().includes(f.text.toLowerCase())) return false;
+  if(f.period!=='all'){ if(!dueOf(t)) return false; const n=daysTo(dueOf(t)); if(f.period==='over' && !(n<0 && t.st!=='done')) return false; if(f.period==='today' && n>0) return false; if(f.period==='week' && n>7) return false; if(f.period==='month' && n>30) return false; }
+  return true;
+}
+function projectMatch(pr){ const f=state.filters; if(f.project!=='all' && pr.id!==f.project) return false; if(f.team && !(pr.teams||[]).includes(f.team)) return false; return true; }
+const hasFilter=()=>{ const f=state.filters; return f.project!=='all'||f.team||f.req!=='all'||f.period!=='all'||f.kind!=='all'||f.pris.size<4||!!f.text; };
+function tasksOf(pid){ return tasks.filter(t=>!t.parent && (t.a===pid || t.req===pid) && (state.filters.done||t.st!=='done')); }
+function statusFor(viewer,t){ if(t.req===viewer && t.a!==viewer && t.st!=='done') return t.reqStatus==='pending'?'requested':'waiting'; return t.st; }
+const canSeePerson = pid => pid===ME || isExec(ME) || teamsOf(pid).some(t=>teamsOf(ME).includes(t)) || projects.some(pr=>pr.members.includes(ME)&&pr.members.includes(pid));
+
+/* ============ レイアウト（絞り込みに依存しない） ============ */
+const R_PRI = pri=> 200 + (4-pri)*70;
+const T_PRI = pri=> 70 + (4-pri)*44;
+const taskR = t=> 9 + Math.sqrt(t.h||1)*4.2;
+function buildRadial(pid, cx, cy){
+  const nodes=[], edges=[], arcs=[]; const byTask={};
+  const me={type:'person', id:pid, owner:pid, x:cx, y:cy, r:34}; nodes.push(me);
+  const myProjects=projects.filter(p=>p.members.includes(pid)).sort((a,b)=>(a.client||'zz').localeCompare(b.client||'zz'));
+  const data=myProjects.map(p=>{ const pt=tasksOf(pid).filter(t=>t.p===p.id); const hours=pt.filter(t=>t.st!=='done').reduce((s,t)=>s+(t.h||0),0); return {p,pt,hours}; });
+  const total=data.reduce((s,x)=>s+Math.sqrt(x.hours),0);
+  const MIN=0.34; let spans=data.map(x=> total>0 ? Math.max(MIN, 2*Math.PI*Math.sqrt(x.hours)/total) : 2*Math.PI/Math.max(data.length,1));
+  const sum=spans.reduce((a,b)=>a+b,0); spans=spans.map(s=>s*2*Math.PI/sum);
+  let ang=-Math.PI/2;
+  data.forEach((x,i)=>{
+    const span=spans[i]; const th=ang+span/2; ang+=span; const p=x.p; const R1=R_PRI(p.pri);
+    const ghostP = pid!==ME && p.vis==='private' && (p.owner||p.members[0])!==ME && !isExec(ME);
+    const pn={type:'project', id:p.id, owner:pid, x:cx+Math.cos(th)*R1, y:cy+Math.sin(th)*R1, r:Math.min(58, 26+Math.sqrt(x.hours)*2.6), th, span, hours:x.hours, count:x.pt.length, ghost:ghostP};
+    nodes.push(pn); edges.push({from:me,to:pn,kind:'spoke'});
+    if(p.client) arcs.push({client:p.client, from:th-span/2, to:th+span/2, cx, cy, owner:pid});
+    const ids=new Set(x.pt.map(t=>t.id));
+    const roots=x.pt.filter(t=>!(t.prev && ids.has(t.prev))).sort((a,b)=>(b.pri-a.pri)||((a.due?daysTo(a.due):999)-(b.due?daysTo(b.due):999)));
+    const n=roots.length; const usable=Math.max(span*0.86, Math.min(1.6, 0.42*(n-1))); const step=n>1?usable/(n-1):0;
+    const seen=new Set();
+    const place=(t,a,dist,fromNode,chain)=>{
+      if(seen.has(t.id)) return; seen.add(t.id);
+      const vis=visibility(ME,t); const r=taskR(t);
+      const tn={type:'task', id:t.id, owner:pid, x:pn.x+Math.cos(a)*dist, y:pn.y+Math.sin(a)*dist, r, a, dist, vis, chain};
+      nodes.push(tn); byTask[t.id]=tn; edges.push({from:fromNode,to:tn,kind:chain?'chain':'twig'});
+      if(t.a===pid){ children(t).forEach((c,k,arr)=>{ const ca=a+(k-(arr.length-1)/2)*0.3; const cn={type:'task', id:c.id, owner:pid, x:tn.x+Math.cos(ca)*(r+34), y:tn.y+Math.sin(ca)*(r+34), r:5+Math.sqrt(c.h||1)*2.6, sub:true, vis, a:ca}; nodes.push(cn); byTask[c.id]=cn; edges.push({from:tn,to:cn,kind:'sub'}); }); }
+      x.pt.filter(nx=>nx.prev===t.id).forEach(nx=>place(nx, a, dist + r + taskR(nx) + 46, tn, true));
+    };
+    // 隣り合うタスクは半径を交互にずらして文字の重なりを減らす
+    roots.forEach((t,j)=>place(t, th+(j-(n-1)/2)*step, pn.r + T_PRI(t.pri) + taskR(t) + (j%2?26:0), pn, false));
+  });
+  return {nodes,edges,arcs,byTask};
+}
+function layout(){
+  const all={nodes:[],edges:[],arcs:[],byPerson:{},centers:{}};
+  const add=L=>{ all.nodes.push(...L.nodes); all.edges.push(...L.edges); all.arcs.push(...L.arcs); };
+  const self=buildRadial(ME,0,0); add(self); all.byPerson[ME]=self.byTask; all.centers[ME]={x:0,y:0};
+  const others=people.filter(p=>p.id!==ME && canSeePerson(p.id));
+  const R2=1500;
+  others.forEach((p,i)=>{ const th=-Math.PI/2 + Math.PI/others.length + i*(2*Math.PI/others.length); const cx=Math.cos(th)*R2, cy=Math.sin(th)*R2; const L=buildRadial(p.id,cx,cy); add(L); all.byPerson[p.id]=L.byTask; all.centers[p.id]={x:cx,y:cy}; });
+  tasks.filter(t=>!t.parent && isDelegated(t)).forEach(t=>{ const a=all.byPerson[t.req]?.[t.id], b=all.byPerson[t.a]?.[t.id]; if(a&&b) all.edges.push({from:a,to:b,kind:'delegate',color:P(t.a).color,task:t}); });
+  return all;
+}
+
+/* ============ canvas ============ */
+const cv=document.getElementById('cv'); const ctx=cv.getContext('2d');
+const cam={x:0,y:0,s:0.6}; let L=layout(); let dpr=1; let K=1;
+const kOf=s=>1/Math.min(Math.max(s,0.3),1.35);
+function resize(){ dpr=window.devicePixelRatio||1; cv.width=cv.clientWidth*dpr; cv.height=cv.clientHeight*dpr; draw(); }
+window.addEventListener('resize',resize);
+const toWorld=(sx,sy)=>[(sx-cv.clientWidth/2)/cam.s+cam.x,(sy-cv.clientHeight/2)/cam.s+cam.y];
+const toScreen=(x,y)=>[(x-cam.x)*cam.s+cv.clientWidth/2,(y-cam.y)*cam.s+cv.clientHeight/2];
+function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
+function diamond(x,y,r){ ctx.beginPath(); ctx.moveTo(x,y-r); ctx.lineTo(x+r,y); ctx.lineTo(x,y+r); ctx.lineTo(x-r,y); ctx.closePath(); }
+const nodeR=n=> n.type==='project' ? n.r*0.9*K : n.r*K;
+function plusPos(n){ const c=L.centers[n.owner]||{x:0,y:0}; const a=Math.atan2(n.y-c.y,n.x-c.x); const rr2=nodeR(n)+16*K; return {x:n.x+Math.cos(a)*rr2, y:n.y+Math.sin(a)*rr2, r:11*K}; }
+const font=(w,px,mono)=>`${w} ${px}px ${mono?'"IBM Plex Mono",monospace':'"Zen Kaku Gothic New",sans-serif'}`; // フォントは固定（ズーム追従なし）
+const DIM=0.14;
+function draw(){
+  if(state.view!=='map') return;
+  const W=cv.clientWidth,H=cv.clientHeight; K=kOf(cam.s); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=cssVar('--canvas'); ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(W/2,H/2); ctx.scale(cam.s,cam.s); ctx.translate(-cam.x,-cam.y);
+  const ink=cssVar('--ink'), muted=cssVar('--muted'), link=cssVar('--link'), surface=cssVar('--surface'), accent=cssVar('--accent'), ghost=cssVar('--ghost'), evc=cssVar('--event'), dimc=cssVar('--dim');
+  const filt=hasFilter(); const taskDim=t=> filt && !match(t); const projDim=pr=> filt && (!projectMatch(pr) || !tasks.some(t=>!t.parent&&t.p===pr.id&&match(t)));
+  ctx.strokeStyle=cssVar('--grid'); ctx.lineWidth=1/cam.s; ctx.setLineDash([4/cam.s,6/cam.s]); [4,3,2,1].forEach(p=>{ctx.beginPath();ctx.arc(0,0,R_PRI(p),0,Math.PI*2);ctx.stroke();}); ctx.setLineDash([]);
+  L.arcs.forEach(a=>{ const c=CL(a.client); if(!c) return; const rA=160; const dimA=filt && !projects.some(pr=>pr.client===a.client&&pr.members.includes(a.owner)&&!projDim(pr)); ctx.globalAlpha=dimA?DIM:0.5; ctx.beginPath(); ctx.arc(a.cx,a.cy,rA,a.from+0.05,a.to-0.05); ctx.lineWidth=6*K; ctx.lineCap='round'; ctx.strokeStyle=dimA?dimc:c.color; ctx.stroke(); ctx.lineCap='butt'; ctx.globalAlpha=dimA?DIM:1;
+    if(cam.s>0.3 && (a.to-a.from)>0.45){ const mid=(a.from+a.to)/2; ctx.save(); ctx.translate(a.cx+Math.cos(mid)*(160-24),a.cy+Math.sin(mid)*(160-24)); let rot=mid+Math.PI/2; if(Math.sin(mid)>0) rot+=Math.PI; ctx.rotate(rot); ctx.fillStyle=dimA?dimc:c.color; ctx.font=font(700,11); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(c.name,0,0); ctx.restore(); } ctx.globalAlpha=1; });
+  L.edges.forEach(e=>{
+    let dim=false; if(e.kind==='delegate') dim=taskDim(e.task); else if(e.to.type==='task') dim=taskDim(T(e.to.id)); else if(e.to.type==='project') dim=projDim(PR(e.to.id));
+    ctx.globalAlpha=dim?DIM:1; ctx.beginPath(); ctx.moveTo(e.from.x,e.from.y);
+    if(e.kind==='delegate'){ ctx.strokeStyle=e.color; ctx.lineWidth=1.6*K; ctx.setLineDash([6*K,8*K]); ctx.globalAlpha=dim?DIM:0.7; const mx=(e.from.x+e.to.x)/2, my=(e.from.y+e.to.y)/2; ctx.quadraticCurveTo(mx*0.6,my*0.6,e.to.x,e.to.y); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1; return; }
+    if(e.kind==='chain'){ ctx.strokeStyle=ink; ctx.lineWidth=2*K; ctx.lineTo(e.to.x,e.to.y); ctx.stroke(); const ang=Math.atan2(e.to.y-e.from.y,e.to.x-e.from.x); const R=nodeR(e.to); const ex=e.to.x-Math.cos(ang)*R, ey=e.to.y-Math.sin(ang)*R; ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.5)*9*K,ey-Math.sin(ang-0.5)*9*K); ctx.lineTo(ex-Math.cos(ang+0.5)*9*K,ey-Math.sin(ang+0.5)*9*K); ctx.closePath(); ctx.fillStyle=ink; ctx.fill(); ctx.globalAlpha=1; return; }
+    ctx.strokeStyle=link; ctx.lineWidth=(e.kind==='spoke'?2.4:(e.kind==='sub'?0.8:1.2))*K; ctx.lineTo(e.to.x,e.to.y); ctx.stroke(); ctx.globalAlpha=1;
+  });
+  const showLabels=cam.s>0.32;
+  L.nodes.forEach(n=>{
+    const sel=state.selected && state.selected.type===n.type && state.selected.id===n.id && state.selected.owner===n.owner;
+    const R=nodeR(n);
+    if(n.type==='person'){ const p=P(n.id); ctx.beginPath(); ctx.arc(n.x,n.y,R,0,Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); ctx.lineWidth=5*K; ctx.strokeStyle=surface; ctx.stroke();
+      if(n.id===state.focus){ ctx.beginPath(); ctx.arc(n.x,n.y,R+7*K,0,Math.PI*2); ctx.lineWidth=2.5*K; ctx.strokeStyle=accent; ctx.stroke(); }
+      if(p.external){ ctx.beginPath(); ctx.arc(n.x,n.y,R+7*K,0,Math.PI*2); ctx.setLineDash([4*K,4*K]); ctx.lineWidth=1.5*K; ctx.strokeStyle=muted; ctx.stroke(); ctx.setLineDash([]); }
+      ctx.fillStyle='#fff'; ctx.font=font(700,Math.round(15*Math.min(K,1.6))); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.name,n.x,n.y);
+      if(showLabels){ ctx.fillStyle=muted; ctx.font=font(500,12); ctx.textBaseline='top'; const mine=tasksOf(n.id).filter(t=>t.st!=='done'&&t.a===n.id&&(!filt||match(t))); ctx.fillText(`${p.external?'外部・':''}${p.role} ・ ${mine.length}件 / ${mine.reduce((a,t)=>a+t.h,0)}h`,n.x,n.y+R+10); }
+      return; }
+    if(n.type==='project'){ const pr=PR(n.id); const col=cssVar(PRI[pr.pri].v); const side=R*2; const dim=projDim(pr); ctx.globalAlpha=dim?DIM:1;
+      rr(n.x-side/2,n.y-side/2,side,side,12*K); ctx.fillStyle=n.ghost?ghost:surface; ctx.fill(); ctx.lineWidth=(sel?5:3.5)*K; ctx.strokeStyle=sel?accent:(n.ghost?ghost:(dim?dimc:col)); ctx.stroke();
+      if(n.ghost){ ctx.globalAlpha=1; return; }
+      if(pr.client&&CL(pr.client)){ ctx.save(); ctx.clip(); ctx.fillStyle=dim?dimc:CL(pr.client).color; ctx.fillRect(n.x-side/2,n.y-side/2,side,7*K); ctx.restore(); }
+      ctx.fillStyle=ink; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font=font(700,13);
+      const nm=pr.name.length>8?pr.name.slice(0,7)+'…':pr.name; ctx.fillText(nm,n.x,n.y-6);
+      const shown=tasks.filter(t=>!t.parent&&t.p===pr.id&&(t.a===n.owner||t.req===n.owner)&&t.st!=='done'&&(!filt||match(t))); ctx.fillStyle=muted; ctx.font=font(500,11,true); ctx.fillText(`${shown.reduce((a,t)=>a+t.h,0)}h・${shown.length}件`,n.x,n.y+10);
+      if(pr.due && showLabels){ ctx.font=font(400,11,true); ctx.fillStyle=daysTo(pr.due)<7?cssVar('--pri4'):muted; ctx.fillText(`〜${fmt(pr.due)}`,n.x,n.y+side/2+12);}
+      ctx.globalAlpha=1; if(sel) drawPlus(plusPos(n),accent,surface); return; }
+    const t=T(n.id); if(!t) return; const col=cssVar(PRI[t.pri].v); const done=t.st==='done'; const st=statusFor(n.owner,t); const waiting=st==='waiting'||st==='requested'; const over=dueOf(t)&&daysTo(dueOf(t))<0&&!done; const dim=taskDim(t); const rec=isEvent(t)&&t.repeat&&t.repeat!=='none';
+    ctx.globalAlpha=dim?DIM:1;
+    if(n.vis==='ghost'){ if(isEvent(t)) diamond(n.x,n.y,R); else { ctx.beginPath(); ctx.arc(n.x,n.y,R,0,Math.PI*2); } ctx.fillStyle=ghost; ctx.fill(); if(showLabels&&!n.sub){ ctx.fillStyle=muted; ctx.font=font(400,10); ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText('非公開',n.x,n.y+R+4);} ctx.globalAlpha=1; return; }
+    if(isEvent(t)) diamond(n.x,n.y,R+2*K); else { ctx.beginPath(); ctx.arc(n.x,n.y,R,0,Math.PI*2); }
+    const fill=dim?dimc:(isEvent(t)?evc:col);
+    if(done){ ctx.fillStyle=dim?dimc:cssVar('--done'); ctx.globalAlpha=dim?DIM:0.55; ctx.fill(); ctx.globalAlpha=dim?DIM:1; }
+    else if(waiting){ ctx.fillStyle=surface; ctx.fill(); ctx.setLineDash(st==='requested'?[2*K,4*K]:[5*K,4*K]); ctx.lineWidth=2.5*K; ctx.strokeStyle=fill; ctx.stroke(); ctx.setLineDash([]); const pg=progressOf(t); if(pg){ ctx.beginPath(); ctx.arc(n.x,n.y,R-5*K,-Math.PI/2,-Math.PI/2+Math.PI*2*(pg.done/pg.total)); ctx.lineWidth=4*K; ctx.strokeStyle=fill; ctx.stroke(); } }
+    else { ctx.fillStyle=fill; ctx.fill(); if(isEvent(t)&&!dim){ ctx.lineWidth=2*K; ctx.strokeStyle=col; ctx.stroke(); } }
+    if(rec&&!dim){ ctx.beginPath(); ctx.arc(n.x,n.y,R+6*K,0,Math.PI*2); ctx.setLineDash([3*K,3*K]); ctx.lineWidth=1.5*K; ctx.strokeStyle=evc; ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle=evc; ctx.font=font(700,9); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('↻',n.x-R*0.85,n.y+R*0.85); }
+    if(!dim){
+      if(effVis(t)==='private' && n.owner===ME){ ctx.font=font(700,9); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🔒',n.x+R*0.8,n.y+R*0.8); }
+      if(over){ ctx.beginPath(); ctx.arc(n.x,n.y,R+4*K,0,Math.PI*2); ctx.lineWidth=2*K; ctx.strokeStyle=cssVar('--pri4'); ctx.stroke(); }
+      if(sel){ ctx.beginPath(); ctx.arc(n.x,n.y,R+7*K,0,Math.PI*2); ctx.lineWidth=3*K; ctx.strokeStyle=accent; ctx.stroke(); }
+      if(waiting){ const a=P(t.a); ctx.beginPath(); ctx.arc(n.x+R*0.75,n.y-R*0.75,8*K,0,Math.PI*2); ctx.fillStyle=a.color; ctx.fill(); ctx.fillStyle='#fff'; ctx.font=font(700,8); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(a.name[0],n.x+R*0.75,n.y-R*0.75); }
+      else if(isDelegated(t) && n.owner===t.a){ const q=P(t.req); ctx.beginPath(); ctx.arc(n.x-R*0.75,n.y-R*0.75,7*K,0,Math.PI*2); ctx.fillStyle=q.color; ctx.fill(); ctx.fillStyle='#fff'; ctx.font=font(700,7); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(q.name[0],n.x-R*0.75,n.y-R*0.75); }
+    }
+    if(showLabels && (!n.sub || cam.s>0.7)){
+      ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillStyle=(done||dim)?muted:ink; ctx.font=n.sub?font(400,10):font(500,12);
+      const label=t.title.length>(n.sub?10:14)?t.title.slice(0,n.sub?9:13)+'…':t.title; ctx.fillText(label,n.x,n.y+R+5);
+      if(!n.sub){ ctx.fillStyle=(over&&!dim)?cssVar('--pri4'):muted; ctx.font=font(400,10,true); const pg=progressOf(t); const extra=waiting&&pg?`  ${pg.done}/${pg.total}`:(st==='requested'?'  未受諾':''); ctx.fillText(isEvent(t)?`${rec?REPEAT[t.repeat]+' 次回 ':''}${fmtT(startOf(t))}`:`${t.h}h ${t.due?'〜'+fmt(t.due):''}${extra}`,n.x,n.y+R+20); }
+    }
+    ctx.globalAlpha=1;
+    if(sel && !n.sub && n.owner===ME) drawPlus(plusPos(n),accent,surface);
+  });
+  ctx.restore();
+}
+function drawPlus(pp,accent,surface){ ctx.beginPath(); ctx.arc(pp.x,pp.y,pp.r,0,Math.PI*2); ctx.fillStyle=accent; ctx.fill(); ctx.lineWidth=2*K; ctx.strokeStyle=surface; ctx.stroke(); ctx.strokeStyle=cssVar('--accent-ink'); ctx.lineWidth=2.2*K; ctx.beginPath(); ctx.moveTo(pp.x-5*K,pp.y); ctx.lineTo(pp.x+5*K,pp.y); ctx.moveTo(pp.x,pp.y-5*K); ctx.lineTo(pp.x,pp.y+5*K); ctx.stroke(); }
+
+/* interactions */
+let drag=null, moved=false, pinch=null; const touches=new Map();
+cv.addEventListener('pointerdown',e=>{ if(e.pointerType==='touch') return; hideQuick(); closePopovers(); drag={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y}; moved=false; cv.classList.add('dragging'); cv.setPointerCapture(e.pointerId); document.getElementById('rail').classList.remove('open'); });
+cv.addEventListener('pointermove',e=>{ if(!drag) return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.hypot(dx,dy)>3) moved=true; cam.x=drag.cx-dx/cam.s; cam.y=drag.cy-dy/cam.s; draw(); });
+cv.addEventListener('pointerup',e=>{ cv.classList.remove('dragging'); if(drag && !moved) pick(e.clientX,e.clientY); drag=null; });
+cv.addEventListener('wheel',e=>{ e.preventDefault(); hideQuick(); const rect=cv.getBoundingClientRect(); const sx=e.clientX-rect.left, sy=e.clientY-rect.top; const [wx,wy]=toWorld(sx,sy); const f=Math.exp(-e.deltaY*0.0015); cam.s=Math.min(3,Math.max(0.1,cam.s*f)); const [nx,ny]=toWorld(sx,sy); cam.x+=wx-nx; cam.y+=wy-ny; draw(); },{passive:false});
+cv.addEventListener('touchstart',e=>{ hideQuick(); for(const t of e.changedTouches) touches.set(t.identifier,1); if(touches.size===1){ const t=e.touches[0]; drag={x:t.clientX,y:t.clientY,cx:cam.x,cy:cam.y}; moved=false; } if(touches.size===2){ const [a,b]=e.touches; pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY), s:cam.s, mx:(a.clientX+b.clientX)/2, my:(a.clientY+b.clientY)/2, cx:cam.x, cy:cam.y}; drag=null; } },{passive:true});
+cv.addEventListener('touchmove',e=>{ e.preventDefault(); if(pinch && e.touches.length===2){ const [a,b]=e.touches; const d2=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY); const rect=cv.getBoundingClientRect(); const sx=pinch.mx-rect.left, sy=pinch.my-rect.top; cam.s=pinch.s; cam.x=pinch.cx; cam.y=pinch.cy; const [wx,wy]=toWorld(sx,sy); cam.s=Math.min(3,Math.max(0.1,pinch.s*d2/pinch.d)); const [nx,ny]=toWorld(sx,sy); cam.x+=wx-nx; cam.y+=wy-ny; const mx=(a.clientX+b.clientX)/2, my=(a.clientY+b.clientY)/2; cam.x-=(mx-pinch.mx)/cam.s; cam.y-=(my-pinch.my)/cam.s; Object.assign(pinch,{mx,my,cx:cam.x,cy:cam.y,s:cam.s,d:d2}); draw(); return; } if(drag && e.touches.length===1){ const t=e.touches[0]; const dx=t.clientX-drag.x, dy=t.clientY-drag.y; if(Math.hypot(dx,dy)>4) moved=true; cam.x=drag.cx-dx/cam.s; cam.y=drag.cy-dy/cam.s; draw(); } },{passive:false});
+cv.addEventListener('touchend',e=>{ for(const t of e.changedTouches){ if(drag && !moved && touches.size===1) pick(t.clientX,t.clientY); touches.delete(t.identifier);} if(touches.size<2) pinch=null; if(touches.size===0) drag=null; });
+function pick(cx,cy){
+  const rect=cv.getBoundingClientRect(); const [wx,wy]=toWorld(cx-rect.left,cy-rect.top);
+  if(state.selected){ const n=L.nodes.find(k=>k.type===state.selected.type&&k.id===state.selected.id&&k.owner===state.selected.owner); if(n && n.owner===ME && !n.sub && !n.ghost){ const pp=plusPos(n); if(Math.hypot(pp.x-wx,pp.y-wy)<pp.r+6/cam.s){ showQuick(n, cx-rect.left, cy-rect.top); return; } } }
+  let hit=null, best=1e9; for(const n of L.nodes){ const dd=Math.hypot(n.x-wx,n.y-wy); const R=nodeR(n); if(dd<R+6/cam.s && dd<best){best=dd; hit=n;} }
+  if(!hit){ closeBoard(); return; }
+  if(hit.type==='person'){ focusPerson(hit.id); return; }
+  if(hit.ghost || hit.vis==='ghost'){ toast('非公開のタスク／案件です（存在だけが見えています）'); return; }
+  select({type:hit.type,id:hit.id,owner:hit.owner});
+  if(hit.type==='project') openBoard(hit.id); else if(T(hit.id).p!==state.board) closeBoard();
+}
+function animateCam(to,ms=450){ if(matchMedia('(prefers-reduced-motion: reduce)').matches){Object.assign(cam,to);draw();return;} const from={...cam}; const t0=performance.now(); (function step(now){ const k=Math.min(1,(now-t0)/ms); const e=1-Math.pow(1-k,3); cam.x=from.x+(to.x-from.x)*e; cam.y=from.y+(to.y-from.y)*e; cam.s=from.s+(to.s-from.s)*e; draw(); if(k<1) requestAnimationFrame(step); })(t0); }
+function fitPerson(pid){
+  const ns=L.nodes.filter(n=>n.owner===pid); if(!ns.length) return;
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9; ns.forEach(n=>{ const pad=n.r+(n.type==='task'?40:24); minX=Math.min(minX,n.x-pad); maxX=Math.max(maxX,n.x+pad); minY=Math.min(minY,n.y-pad); maxY=Math.max(maxY,n.y+pad+22); });
+  const availW=cv.clientWidth-24, availH=cv.clientHeight-24;
+  const s=Math.min(3, Math.min(availW/(maxX-minX), availH/(maxY-minY)));
+  animateCam({x:(minX+maxX)/2,y:(minY+maxY)/2,s});
+}
+function focusPerson(pid){ state.focus=pid; fitPerson(pid); renderRail(); document.getElementById('focusName').textContent=pid===ME?'':`${P(pid).full} を表示中`; if(pid!==ME) toast(`${P(pid).full} の放射に移動しました（配置はそのまま）`); }
+function fitAll(){ let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9; L.nodes.forEach(n=>{minX=Math.min(minX,n.x-60);maxX=Math.max(maxX,n.x+60);minY=Math.min(minY,n.y-60);maxY=Math.max(maxY,n.y+60);}); const s=Math.min((cv.clientWidth-24)/(maxX-minX),(cv.clientHeight-24)/(maxY-minY)); animateCam({x:(minX+maxX)/2,y:(minY+maxY)/2,s}); }
+document.getElementById('zoomIn').onclick=()=>animateCam({x:cam.x,y:cam.y,s:Math.min(3,cam.s*1.3)},200);
+document.getElementById('zoomOut').onclick=()=>animateCam({x:cam.x,y:cam.y,s:Math.max(0.1,cam.s/1.3)},200);
+document.getElementById('zoomFit').onclick=fitAll;
+document.getElementById('zoomHome').onclick=()=>focusPerson(ME);
+
+/* ＋ からのクイック追加 */
+const quick=document.getElementById('quick'); let quickTarget=null;
+function showQuick(n,sx,sy){ quickTarget=n; document.getElementById('quickEyebrow').textContent = n.type==='project' ? `案件「${PR(n.id).name}」にタスクを追加` : `「${T(n.id).title}」の次に連ねるタスクを追加`; quick.style.left=Math.max(8,Math.min(sx+12, cv.clientWidth-300))+'px'; quick.style.top=Math.max(8,Math.min(sy+12, cv.clientHeight-90))+'px'; quick.classList.add('show'); document.getElementById('quickTitle').value=''; document.getElementById('quickTitle').focus(); }
+function hideQuick(){ quick.classList.remove('show'); }
+document.getElementById('quickForm').onsubmit=e=>{ e.preventDefault(); const title=document.getElementById('quickTitle').value.trim(); if(!title||!quickTarget) return; const t=createTask(quickTarget,title); hideQuick(); refresh(); select({type:'task',id:t.id,owner:ME}); toast(quickTarget.type==='project'?`「${title}」を追加しました`:`「${title}」を連ねました`); };
+function createTask(target,title){
+  const pr = target.type==='project' ? PR(target.id) : PR(T(target.id).p); const base = target.type==='task' ? T(target.id) : null;
+  const t={id:uid(), p:pr.id, title, a:ME, pri: base?base.pri:pr.pri, h:1, start: base?(base.due||d(0)):d(0), due: base? new Date((base.due||d(0)).getTime()+3*86400000) : d(7), st:'todo', vis:'inherit', links:(pr.links||[]).map(l=>({...l, inherited:true})), memo:''};
+  if(base) t.prev=base.id; tasks.push(t); logHist(t.id,'作成'); return t;
+}
+function quickAddFromShortcut(){ const s=state.selected; if(!s||s.owner!==ME){ toast('案件かタスクを選択してから押してください'); return; } const n=L.nodes.find(k=>k.type===s.type&&k.id===s.id&&k.owner===s.owner); if(!n) return; const pp=plusPos(n); const [sx,sy]=toScreen(pp.x,pp.y); showQuick(n,sx,sy); }
+/* ============ 共通UI：toast / confirm / picker ============ */
+let toastTimer; function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),3000); }
+function confirmDlg(title,body){ return new Promise(res=>{ const dg=document.getElementById('dlgConfirm'); document.getElementById('confirmTitle').textContent=title; document.getElementById('confirmBody').textContent=body||''; dg.showModal(); document.getElementById('confirmYes').onclick=()=>{dg.close();res(true);}; document.getElementById('confirmNo').onclick=()=>{dg.close();res(false);}; dg.oncancel=()=>res(false); }); }
+function pickDlg(title,options,selected,multi=true){ return new Promise(res=>{ const dg=document.getElementById('dlgPick'); document.getElementById('pickTitle').textContent=title; const sel=new Set(selected||[]); const box=document.getElementById('pickChips'); box.innerHTML=options.map(o=>`<button type="button" class="chip" data-v="${o.id}" aria-pressed="${sel.has(o.id)}">${o.color?`<span class="dot" style="background:${o.color}"></span>`:''}${esc(o.label)}</button>`).join(''); box.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ const v=c.dataset.v; if(!multi){ sel.clear(); box.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed','false')); } sel.has(v)?sel.delete(v):sel.add(v); c.setAttribute('aria-pressed',sel.has(v)); }); dg.showModal(); document.getElementById('pickOk').onclick=()=>{dg.close();res([...sel]);}; document.getElementById('pickCancel').onclick=()=>{dg.close();res(null);}; dg.oncancel=()=>res(null); }); }
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function closePopovers(){ document.getElementById('notif').classList.remove('show'); document.getElementById('meMenu').classList.remove('show'); document.getElementById('searchres').classList.remove('show'); }
+function notify(text,taskId,type='info'){ notifications.unshift({id:uid(),type,text,task:taskId,at:new Date(),read:false}); renderNotifBadge(); }
+
+/* ============ 詳細パネル ============ */
+function select(sel){ state.selected=sel; renderDetail(); draw(); if(matchMedia('(max-width:980px)').matches) document.getElementById('panel').classList.add('open'); }
+function priBadge(i){return `<span class="badge"><span class="dot" style="background:var(${PRI[i].v})"></span>${PRI[i].n}</span>`;}
+function ed(obj,field,display,type,options){ return `<button class="val" data-obj="${obj.id}" data-f="${field}" data-type="${type}" ${options?`data-opts='${esc(JSON.stringify(options))}'`:''}>${display}</button>`; }
+function kindRow(l,inh,ownerId,idx){ const k=LINK_KINDS[l.kind]; return `<div class="linkrow"><span class="ic" style="background:${k.bg}">${k.ic}</span><span style="min-width:74px">${esc(l.label||k.label)}</span><span class="path mono">${esc(l.value)}</span>${inh?'<span class="inh">案件から</span>':''}<button class="open" data-open="${esc(k.open(l.value))}">開く</button>${ownerId?`<button class="x" data-unlink="${ownerId}" data-idx="${idx}" aria-label="削除">✕</button>`:''}</div>`; }
+function addLinkUI(id){ return `<div class="addlink"><select data-addkind>${Object.entries(LINK_KINDS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select><input type="text" data-addval placeholder="パス / URL / ノート名"><button type="button" data-addlink="${id}">追加</button></div>`; }
+function memoUI(t){ return `<div><h3 class="sec">メモ</h3><textarea class="memo" data-memo="${t.id}" placeholder="打合せの要点、判断の理由、行程やリンクなど。Markdown 可（実装時）">${esc(t.memo||'')}</textarea><div class="memo-hint">自動保存。</div></div>`; }
+function teamBadges(pr){ return (pr.teams||[]).map(id=>TM(id)?`<span class="badge">${esc(TM(id).name)}</span>`:'').join(' ')||'<span style="color:var(--muted)">（なし）</span>'; }
+function histUI(id){ const h=history[id]||[]; return h.length?`<div><h3 class="sec">履歴</h3><div class="hist">${h.slice(0,6).map(x=>`<span>${fmtT(x.at)} ${P(x.who)?P(x.who).name:'—'}${x.via==='mcp'?' <span class="badge" style="font-size:10px;padding:0 5px">Claude 経由</span>':(x.via==='desk'?' <span class="badge" style="font-size:10px;padding:0 5px">ORMAP Desk</span>':'')}：${esc(x.text)}</span>`).join('')}</div></div>`:''; }
+function renderDetail(){
+  const box=document.getElementById('detail'); const s=state.selected;
+  if(!s){ box.innerHTML='<p class="empty">マップ上の案件・タスクをクリックすると、ここに詳細が出ます。値をクリックすると編集できます。選択中ノードの端の ＋ でタスクを追加。</p>'; return; }
+  if(s.type==='project'){ const pr=PR(s.id); if(!pr){state.selected=null;renderDetail();return;} const pt=tasks.filter(t=>!t.parent&&t.p===pr.id); const open=pt.filter(t=>t.st!=='done'); const hours=open.reduce((a,t)=>a+t.h,0); const cl=pr.client?CL(pr.client):null;
+    box.innerHTML=`<div><div class="eyebrow mono">${esc(pr.code)} ・ 案件${cl?` ・ <span style="color:${cl.color}">${esc(cl.name)}</span>`:''}</div><h2>${ed(pr,'name',esc(pr.name),'text')}</h2><div style="color:var(--muted)">${ed(pr,'desc',esc(pr.desc||'（説明を追加）'),'text')}</div></div>
+    <dl class="kv">
+      <dt>優先度</dt><dd>${ed(pr,'pri',priBadge(pr.pri),'select',Object.fromEntries([4,3,2,1].map(i=>[i,PRI[i].n])))}</dd>
+      <dt>クライアント</dt><dd>${ed(pr,'client',cl?esc(cl.name):'（なし）','select',Object.fromEntries([['',"（なし）"],...clients.map(c=>[c.id,c.name])]))}</dd>
+      <dt>チーム</dt><dd>${teamBadges(pr)} <button class="badge" data-act="editteams">変更</button></dd>
+      <dt>期間</dt><dd class="mono">${ed(pr,'start',fmt(pr.start),'date')} → ${ed(pr,'due',fmt(pr.due),'date')}</dd>
+      <dt>公開範囲</dt><dd>${ed(pr,'vis',VIS[pr.vis]||'組織の全員','select',{org:VIS.org,team:VIS.team,members:VIS.members,private:VIS.private})}</dd>
+      <dt>事業体</dt><dd>${ed(pr,'entity',esc(pr.entity||'（未設定）'),'select',{'':'（未設定）','サンプル社':'サンプル社','法人B':'法人B','個人事業':'個人事業','団体C':'団体C','共通':'共通'})}</dd>
+      <dt>予定の同期先</dt><dd>${ed(pr,'calendar',CA(pr.calendar)?esc(CA(pr.calendar).name):'（組織の既定）','select',Object.fromEntries([['','（組織の既定）'],...calendars.filter(c=>c.sync).map(c=>[c.id,c.name])]))}<small style="display:block;color:var(--muted)">この案件の予定は既定でこのカレンダーに登録</small></dd>
+      <dt>残タスク</dt><dd class="mono">${open.length}件 / ${hours}h</dd>
+      <dt>関わる人</dt><dd>${pr.members.map(m=>`<span class="badge"><span class="dot" style="background:${P(m).color}"></span>${P(m).name}${P(m).external?'<span class="ext">外部</span>':''}</span>`).join(' ')} <button class="badge" data-act="editmembers">変更</button></dd>
+      ${pr.members.some(m=>P(m).external)?`<dt>外部の可視範囲</dt><dd>${ed(pr,'ext_scope',pr.ext_scope==='assigned'?'自分の担当タスクのみ':'案件内すべて','select',{assigned:'自分の担当タスクのみ',all:'案件内すべて'})}</dd>`:''}
+    </dl>
+    <div><h3 class="sec">連携（タスク作成時に既定で引き継ぐ）</h3><div class="links">${(pr.links||[]).map((l,i)=>kindRow(l,false,pr.id,i)).join('')}${addLinkUI(pr.id)}</div></div>
+    <div class="actions"><button class="primary" data-act="addtask">タスクを追加</button><button data-act="addevent">予定を追加</button><button data-act="board" data-p="${pr.id}">案件ボード</button><button data-act="filter" data-p="${pr.id}">この案件で絞り込む</button><button class="danger" data-act="archive">アーカイブ</button></div>`; bindDetail(); return; }
+  const t=T(s.id); if(!t){state.selected=null;renderDetail();return;} const pr=PR(t.p); const pg=progressOf(t); const ch=children(t); const delegated=isDelegated(t); const over=dueOf(t)&&daysTo(dueOf(t))<0&&t.st!=='done'; const st=statusFor(ME,t); const ev=isEvent(t); const mine=t.a===ME||t.req===ME;
+  box.innerHTML=`<div><div class="eyebrow mono">${pr.client&&CL(pr.client)?esc(CL(pr.client).name)+' ・ ':''}${esc(pr.code)} ・ <button class="badge" data-selp="${pr.id}">${esc(pr.name)}</button>${t.parent?' ・ 細分化タスク':''}${ev?' ・ 予定':''}</div><h2>${mine?ed(t,'title',esc(t.title),'text'):esc(t.title)}</h2></div>
+  <div class="actions">${mine?ed(t,'pri',priBadge(t.pri),'select',Object.fromEntries([4,3,2,1].map(i=>[i,PRI[i].n]))):priBadge(t.pri)}<span class="badge">${st==='requested'?'依頼中（未受諾）':STATUS[st]}</span>${ev?'<span class="badge" style="border-color:var(--event);color:var(--event)">予定</span>':''}${over?'<span class="badge" style="color:var(--pri4);border-color:var(--pri4)">期限切れ</span>':''}</div>
+  <dl class="kv">
+    <dt>種別</dt><dd>${ed(t,'kind',ev?'予定（出張・訪問・イベント）':'タスク','select',{task:'タスク',event:'予定（出張・訪問・イベント）'})}</dd>
+    <dt>案件</dt><dd>${ed(t,'p',esc(pr.name),'select',Object.fromEntries(projects.filter(p=>p.members.includes(ME)).map(p=>[p.id,p.name])))}</dd>
+    <dt>担当</dt><dd>${ed(t,'a',`<span class="badge"><span class="dot" style="background:${P(t.a).color}"></span>${P(t.a).full}</span>`,'select',Object.fromEntries(people.map(p=>[p.id,p.full])))}${P(t.a).code?` <span class="mono" style="font-size:11px;color:var(--muted)">${P(t.a).code}</span>`:''}</dd>
+    ${delegated?`<dt>依頼者</dt><dd><span class="badge"><span class="dot" style="background:${P(t.req).color}"></span>${P(t.req).full}</span> <span style="color:var(--muted);font-size:12px">${t.reqStatus==='pending'?'受諾待ち':'受諾済み'}${t.reqDue?'・期限 '+fmt(t.reqDue):''}</span></dd>`:''}
+    <dt>工数</dt><dd class="mono">${ed(t,'h',t.h+'h','number')}</dd>
+    <dt>開始</dt><dd class="mono">${ed(t,'start',ev?fmtT(startOf(t)):fmt(t.start),ev?'datetime':'date')}</dd>
+    <dt>${ev?'終了':'期限'}</dt><dd class="mono" ${over?'style="color:var(--pri4)"':''}>${ed(t,'due',ev?fmtT(dueOf(t)):(t.due?fmt(t.due)+`（${daysTo(t.due)>=0?'あと'+daysTo(t.due)+'日':Math.abs(daysTo(t.due))+'日超過'}）`:'—'),ev?'datetime':'date')}</dd>
+    ${ev?`<dt>場所</dt><dd>${ed(t,'location',esc(t.location||'（場所を追加）'),'text')}</dd><dt>繰り返し</dt><dd>${ed(t,'repeat',REPEAT[t.repeat||'none'],'select',REPEAT)}${t.repeat&&t.repeat!=='none'?` <span style="color:var(--muted);font-size:12px">次回 ${fmtT(nextOccurrence(t).start)}（マップには直近の1回だけ表示）</span>`:''}</dd>`:''}
+    <dt>ステータス</dt><dd>${ed(t,'st',STATUS[t.st],'select',{todo:'未着手',doing:'進行中',done:'完了'})}</dd>
+    <dt>公開範囲</dt><dd>${ed(t,'vis',(t.vis||'inherit')==='inherit'?`${VIS.inherit}（${VIS[pr.vis]||'案件メンバー'}）`:VIS[t.vis],'select',{inherit:VIS.inherit,project:'案件の公開範囲と同じ',private:VIS.private})}</dd>
+    ${t.prev&&T(t.prev)?`<dt>前のタスク</dt><dd><button class="badge" data-sel="${t.prev}">← ${esc(T(t.prev).title)}</button> <button class="badge" data-act="unchain">外す</button></dd>`:`<dt>前のタスク</dt><dd><button class="badge" data-act="setprev">連なる元を選ぶ</button></dd>`}
+    ${tasks.filter(x=>x.prev===t.id).map(x=>`<dt>次のタスク</dt><dd><button class="badge" data-sel="${x.id}">→ ${esc(x.title)}</button></dd>`).join('')}
+    ${t.parent&&T(t.parent)?`<dt>親の依頼</dt><dd><button class="badge" data-sel="${t.parent}">↑ ${esc(T(t.parent).title)}</button></dd>`:''}
+  </dl>
+  ${ev?`<div class="cal"><span class="g">G</span><span style="flex:1">${t.calendar?`同期先：${ed(t,'calId',(CA(t.calId)?`<span class="badge"><span class="dot" style="background:${CA(t.calId).color}"></span>${esc(CA(t.calId).name)}</span>`:'（未選択）'),'select',Object.fromEntries(calendars.filter(c=>c.sync).map(c=>[c.id,c.name+'（'+(c.entity||'—')+'）'])))}<small style="display:block;color:var(--muted)">${t.origin==='google'?'Google カレンダーで作成 → ORMAP に取り込み':'ORMAP で作成 → Google カレンダーに登録'}${t.repeat&&t.repeat!=='none'?' ・ 繰り返し（RRULE）':''}</small>`:'Google カレンダー 未同期'}</span><button class="badge" data-act="calsync">${t.calendar?'同期を解除':'同期する'}</button></div>`:''}
+  ${mine?`<div class="cal" style="border:1px dashed var(--line)"><span>🎙</span><span class="grow" style="flex:1">AI 音声議事録<small style="display:block;color:var(--muted)">${minutesState[t.id]==='recording'?'superwhisper で録音中… 停止すると文字起こし→要約→議事録を保存':(minutesState[t.id]==='done'?'議事録を保存済み（'+(t.links||[]).filter(l=>l.label==='議事録').length+'件）':'superwhisper を起動して録音。停止後に Claude が議事録を生成')}</small></span><button class="badge" data-act="minutes">${minutesState[t.id]==='recording'?'録音を停止':'録音を開始'}</button></div>`:''}
+  ${pg||(delegated&&t.a===ME)?`<div><h3 class="sec">${t.a===ME?'細分化タスク':'依頼先の進捗'} ${pg?`<span class="mono">${pg.done}/${pg.total}</span>`:''}</h3>${pg?`<div class="progress"><i style="width:${pg.done/pg.total*100}%"></i></div>`:''}<ul class="subtasks" style="margin-top:8px">${ch.map(c=>`<li class="${c.st==='done'?'done':''}"><button class="chk" data-toggle="${c.id}" aria-label="完了切替"></button><button class="val" data-obj="${c.id}" data-f="title" data-type="text" style="flex:1">${esc(c.title)}</button><span class="mono" style="color:var(--muted)">${c.h}h 〜${fmt(c.due)}</span>${t.a===ME?`<button class="x" data-del="${c.id}" aria-label="削除" style="color:var(--muted)">✕</button>`:''}</li>`).join('')}</ul>${t.a===ME?`<div class="addlink" style="margin-top:6px"><input type="text" data-subadd placeholder="細分化タスクを追加して Enter"></div>`:''}</div>`:''}
+  <div><h3 class="sec">連携（クリックで開く）</h3><div class="links">${(t.links||[]).map((l,i)=>kindRow(l,l.inherited,t.id,i)).join('')}${(!t.links||!t.links.length)?(pr.links||[]).map(l=>kindRow(l,true)).join(''):''}${addLinkUI(t.id)}</div></div>
+  ${memoUI(t)}
+  ${histUI(t.id)}
+  <div class="actions">
+    ${t.st!=='done'&&t.a===ME?`<button class="primary" data-act="start">${isEvent(t)&&t.repeat&&t.repeat!=='none'?'今回分を完了（次回へ）':(t.st==='doing'?'完了にする':'着手する（連携をまとめて開く）')}</button>`:''}
+    ${t.st==='done'&&mine?`<button data-act="reopen">未完了に戻す</button>`:''}
+    ${st==='requested'&&t.a===ME?`<button class="primary" data-act="accept">受諾する</button><button data-act="decline">辞退する</button>`:''}
+    ${(!delegated && t.a===ME)?`<button data-act="delegate">誰かに依頼する</button>`:''}
+    ${(delegated && t.req===ME)?`<button data-act="recall">依頼を取り消す</button>`:''}
+    ${mine&&!t.parent?`<button data-act="chain">次に連ねるタスクを追加</button>`:''}
+    ${mine?`<button data-act="dup">複製</button>`:''}${(t.req?t.req===ME:t.a===ME)?`<button class="danger" data-act="delete">削除</button>`:''}
+  </div>`;
+  bindDetail();
+}
+function bindDetail(){
+  const box=document.getElementById('detail');
+  box.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>toast('（デモ）'+b.dataset.open));
+  box.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>select({type:'task',id:b.dataset.sel,owner:ME}));
+  box.querySelectorAll('[data-selp]').forEach(b=>b.onclick=()=>{select({type:'project',id:b.dataset.selp,owner:ME}); openBoard(b.dataset.selp);});
+  box.querySelectorAll('[data-memo]').forEach(ta=>{ ta.oninput=()=>{ T(ta.dataset.memo).memo=ta.value; }; });
+  box.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{ const c=T(b.dataset.toggle); c.st=c.st==='done'?'todo':'done'; const par=T(c.parent); if(par&&par.req&&par.req!==par.a&&c.st==='done'&&settings.notify.progress) notify(`${P(par.a).name}さんの「${par.title}」が進みました`,par.id,'progress'); refresh(); renderDetail(); });
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ tasks=tasks.filter(x=>x.id!==b.dataset.del); refresh(); renderDetail(); toast('細分化タスクを削除しました'); });
+  box.querySelectorAll('[data-subadd]').forEach(inp=>inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter'){ e.preventDefault(); const v=inp.value.trim(); if(!v) return; const t=T(state.selected.id); tasks.push({id:uid(),p:t.p,title:v,a:t.a,pri:t.pri,h:1,due:t.due,st:'todo',parent:t.id}); refresh(); renderDetail(); toast('細分化タスクを追加しました'); } });
+  box.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=()=>{ const obj=T(b.dataset.unlink)||PR(b.dataset.unlink); if(T(b.dataset.unlink)&&(!obj.links||!obj.links.length)) obj.links=(PR(obj.p).links||[]).map(l=>({...l,inherited:true})); obj.links.splice(+b.dataset.idx,1); renderDetail(); toast('連携を外しました'); });
+  box.querySelectorAll('[data-addlink]').forEach(b=>b.onclick=()=>{ const wrap=b.parentElement; const kind=wrap.querySelector('[data-addkind]').value; const val=wrap.querySelector('[data-addval]').value.trim(); if(!val){ wrap.querySelector('[data-addval]').focus(); toast('パスや URL を入力してください'); return; } const obj=T(b.dataset.addlink)||PR(b.dataset.addlink); if(T(b.dataset.addlink)&&(!obj.links||!obj.links.length)) obj.links=(PR(obj.p).links||[]).map(l=>({...l,inherited:true})); (obj.links=obj.links||[]).push({kind,value:val}); renderDetail(); toast(`${LINK_KINDS[kind].label} を追加しました`); });
+  box.querySelectorAll('.val').forEach(b=>b.onclick=()=>{
+    const obj=T(b.dataset.obj)||PR(b.dataset.obj); const f=b.dataset.f, type=b.dataset.type; let inp;
+    if(type==='select'){ const opts=JSON.parse(b.dataset.opts); inp=document.createElement('select'); Object.entries(opts).forEach(([v,l])=>{ const o=document.createElement('option'); o.value=v; o.textContent=l; if(String(obj[f]??(f==='vis'?'inherit':''))===v) o.selected=true; inp.appendChild(o); }); }
+    else { inp=document.createElement('input'); inp.type= type==='datetime'?'datetime-local':(type==='number'?'number':(type==='date'?'date':'text')); if(type==='number'){inp.step='0.5';inp.min='0';inp.value=obj[f];} else if(type==='date'){inp.value=toISO(obj[f]);} else if(type==='datetime'){ inp.value=toISOT(obj[f]); } else inp.value=obj[f]||''; }
+    inp.style.width= type==='text'?'100%':'auto';
+    const commit=()=>{ let v=inp.value; const before=obj[f]; if(type==='number') v=Math.max(0,parseFloat(v)||0); else if(type==='date') v=fromISO(v); else if(type==='datetime') v=v?new Date(v):null; else if(f==='pri') v=+v; else if(f==='client'&&v==='') v=undefined; obj[f]=v; if(obj.title!==undefined) logHist(obj.id,`${f} を変更`); if(f==='st'&&v==='done'&&obj.req&&obj.req!==obj.a){ toast(`${P(obj.req).name}に完了を通知しました`); notify(`${P(obj.a).name}さんが「${obj.title}」を完了しました`,obj.id,'done'); } if(f==='a'&&before!==v&&obj.title!==undefined){ if(v===ME){ delete obj.req; delete obj.reqStatus; } else { obj.req=ME; obj.reqStatus='pending'; if(!PR(obj.p).members.includes(v)) PR(obj.p).members.push(v); toast(`${P(v).name}に依頼として送りました`); } } if(f==='p'&&before!==v&&obj.title!==undefined){ if(obj.prev&&T(obj.prev)&&T(obj.prev).p!==v) delete obj.prev; tasks.filter(x=>x.prev===obj.id&&x.p!==v).forEach(x=>delete x.prev); tasks.filter(x=>x.parent===obj.id).forEach(x=>x.p=v); if(!PR(v).members.includes(obj.a)) PR(v).members.push(obj.a); } if(f==='vis'&&v==='private'&&obj.members&&!obj.owner) obj.owner=ME; if(f==='kind'&&v==='event'&&obj.start&&obj.due&&obj.due<=obj.start){ obj.due=new Date(obj.start.getTime()+3600000); } refresh(); renderDetail(); };
+    inp.onchange=commit; inp.onblur=()=>{ if(type==='text') commit(); else if(document.activeElement!==inp) renderDetail(); }; inp.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Enter'){e.preventDefault();commit();} if(e.key==='Escape') renderDetail(); };
+    b.replaceWith(inp); inp.focus(); if(inp.showPicker && type!=='text' && type!=='number'){ try{inp.showPicker();}catch(e){} }
+  });
+  box.querySelectorAll('[data-act]').forEach(b=>b.onclick=async()=>{
+    const a=b.dataset.act; const s=state.selected;
+    if(a==='board'){ openBoard(b.dataset.p); }
+    if(a==='filter'){ document.getElementById('fProject').value=b.dataset.p; state.filters.project=b.dataset.p; refresh(); toast(`案件「${PR(b.dataset.p).name}」で絞り込みました（他は薄く表示）`); }
+    if(a==='start'){ const t=T(s.id); if(isEvent(t)&&t.repeat&&t.repeat!=='none'){ const nx=nextOccurrence(t); const dur=(t.due||t.start)-t.start; const s2=new Date(nx.start); if(t.repeat==='weekly') s2.setDate(s2.getDate()+7); else if(t.repeat==='biweekly') s2.setDate(s2.getDate()+14); else s2.setMonth(s2.getMonth()+1); t.start=s2; t.due=new Date(s2.getTime()+dur); logHist(t.id,'今回分を完了（次回へ）'); refresh(); renderDetail(); toast(`今回分を完了にしました。次回は ${fmtT(t.start)}`); return; } if(t.st==='doing'){ t.st='done'; logHist(t.id,'完了'); if(t.req&&t.req!==t.a){ toast(`${P(t.req).name}に完了を通知しました`); notify(`${P(t.a).name}さんが「${t.title}」を完了しました`,t.id,'done'); } else toast('完了にしました'); } else { t.st='doing'; logHist(t.id,'着手'); const ls=(t.links&&t.links.length?t.links:(PR(t.p).links||[])); toast(`着手：${ls.map(l=>LINK_KINDS[l.kind].label).join('・')||'連携なし'} をまとめて開きます（デモ）`); } refresh(); renderDetail(); }
+    if(a==='reopen'){ const t=T(s.id); t.st='doing'; logHist(t.id,'未完了に戻す'); refresh(); renderDetail(); }
+    if(a==='accept'){ const t=T(s.id); t.reqStatus='accepted'; logHist(t.id,'受諾'); refresh(); renderDetail(); toast(`受諾しました。${P(t.req).name}に通知します`); }
+    if(a==='decline'){ const t=T(s.id); const q=t.req; t.a=q; delete t.req; delete t.reqStatus; logHist(t.id,'辞退'); refresh(); renderDetail(); toast(`辞退しました。タスクは${P(q).name}に戻ります`); }
+    if(a==='recall'){ const t=T(s.id); const who=t.a; t.a=ME; delete t.req; delete t.reqStatus; logHist(t.id,'依頼を取り消し'); refresh(); renderDetail(); toast(`${P(who).name}への依頼を取り消しました`); }
+    if(a==='delegate'){ openDelegate(T(s.id)); }
+    if(a==='addtask'){ const pr=PR(s.id); const t=createTask({type:'project',id:pr.id},'新しいタスク'); refresh(); select({type:'task',id:t.id,owner:ME}); toast(`「${pr.name}」にタスクを追加しました（連携は案件から引き継ぎ）`); }
+    if(a==='addevent'){ openEventDlg(PR(s.id)); }
+    if(a==='chain'){ const base=T(s.id); const t=createTask({type:'task',id:base.id},'次のタスク'); refresh(); select({type:'task',id:t.id,owner:ME}); toast(`「${base.title}」の次に連ねました`); }
+    if(a==='unchain'){ const t=T(s.id); delete t.prev; refresh(); renderDetail(); }
+    if(a==='setprev'){ const t=T(s.id); const desc=new Set(); (function walk(id){ tasks.filter(x=>x.prev===id).forEach(x=>{ if(!desc.has(x.id)){ desc.add(x.id); walk(x.id); } }); })(t.id); const cands=tasks.filter(x=>x.p===t.p&&!x.parent&&x.id!==t.id&&!desc.has(x.id)).map(x=>({id:x.id,label:x.title})); const r=await pickDlg('連なる元のタスクを選ぶ',cands,[],false); if(r&&r[0]){ t.prev=r[0]; refresh(); renderDetail(); } }
+    if(a==='minutes'){ const t=T(s.id); if(minutesState[t.id]==='recording'){ minutesState[t.id]='processing'; renderDetail(); toast('録音を停止。superwhisper の文字起こしを取り込み中…'); setTimeout(()=>{ const dir=`${(PR(t.p).links||[]).find(l=>l.kind==='folder')?.value||'WORKSPACE'}/議事録/${toISO(TODAY)}_${t.title.replace(/\s+/g,'_')}`; (t.links=t.links||[]).push({kind:'folder',label:'文字起こし',value:dir+'/transcript.txt'}); toast('文字起こしを保存。Claude が要約中…'); setTimeout(()=>{ t.links.push({kind:'obsidian',label:'議事録',value:dir+'/議事録.md'}); t.memo=(t.memo||'')+`\n\n[AI 議事録 ${fmtT(TODAY)}]\n- 決定：…\n- 宿題：…（担当・期限）\n- 次回：…`; minutesState[t.id]='done'; logHist(t.id,'AI 音声議事録を生成'); notify(`「${t.title}」の議事録が生成されました`,t.id,'info'); renderDetail(); toast('議事録を生成し、案件フォルダに保存しました（デモ）'); },1200); },1200); } else { if(!settings.desk.connected){ toast('ORMAP Desk が未接続です。設定 › ORMAP Desk から接続してください'); return; } minutesState[t.id]='recording'; renderDetail(); toast('superwhisper を起動して録音を開始しました（デモ：superwhisper://record）'); } }
+    if(a==='calsync'){ const t=T(s.id); t.calendar=t.calendar?null:'google'; renderDetail(); toast(t.calendar?'Google カレンダーに予定を作成しました（デモ）':'カレンダーとの同期を解除しました（デモ）'); }
+    if(a==='editmembers'){ const pr=PR(s.id); const r=await pickDlg('案件のメンバー',people.map(p=>({id:p.id,label:p.full+(p.external?'（外部）':''),color:p.color})),pr.members); if(r){ pr.members=r.length?r:[ME]; refresh(); renderDetail(); toast('メンバーを更新しました'); } }
+    if(a==='editteams'){ const pr=PR(s.id); const r=await pickDlg('案件のチーム',teams.map(t=>({id:t.id,label:t.name})),pr.teams||[]); if(r){ pr.teams=r; refresh(); renderDetail(); toast('チームを更新しました'); } }
+    if(a==='archive'){ const pr=PR(s.id); if(await confirmDlg(`「${pr.name}」をアーカイブしますか？`,'マップから消えます。設定 › 案件一覧から戻せます。')){ archivedTasks[pr.id]=tasks.filter(t=>t.p===pr.id); tasks=tasks.filter(t=>t.p!==pr.id); projects=projects.filter(p=>p.id!==pr.id); archived.push(pr); if(state.filters.project===pr.id) state.filters.project='all'; state.selected=null; closeBoard(); refresh(); renderDetail(); toast('アーカイブしました'); } }
+    if(a==='dup'){ const t=T(s.id); const c={...t,id:uid(),title:t.title+'（コピー）',st:'todo',links:[...(t.links||[])]}; delete c.req; delete c.reqStatus; delete c.prev; tasks.push(c); refresh(); select({type:'task',id:c.id,owner:ME}); toast('複製しました'); }
+    if(a==='delete'){ const t=T(s.id); if(await confirmDlg(`「${t.title}」を削除しますか？`,'細分化タスクも削除されます。連なっていた次のタスクは案件直下に戻ります。')){ tasks=tasks.filter(x=>x.id!==t.id&&x.parent!==t.id); tasks.forEach(x=>{ if(x.prev===t.id) delete x.prev; }); state.selected=null; refresh(); renderDetail(); toast('削除しました'); } }
+  });
+}
+const archived=[]; const archivedTasks={}; const minutesState={};
+
+/* 依頼ダイアログ / 予定ダイアログ */
+function openDelegate(t){ const dg=document.getElementById('dlgDelegate'); const box=document.getElementById('dgWho'); let who=null; box.innerHTML=people.filter(p=>p.id!==ME&&canSeePerson(p.id)).map(p=>`<button type="button" class="chip" data-w="${p.id}" aria-pressed="false"><span class="dot" style="background:${p.color}"></span>${p.full}${p.external?'<span class="ext">外部</span>':''}</button>`).join(''); box.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ box.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed','false')); c.setAttribute('aria-pressed','true'); who=c.dataset.w; }); document.getElementById('dgDue').value=toISO(t.due||d(7)); document.getElementById('dgMsg').value=''; dg.showModal(); document.getElementById('dgCancel').onclick=()=>dg.close(); document.getElementById('frmDelegate').onsubmit=e=>{ if(!who){ e.preventDefault(); toast('依頼先を選んでください'); return; } t.req=ME; t.a=who; t.reqStatus='pending'; t.reqDue=fromISO(document.getElementById('dgDue').value); if(!PR(t.p).members.includes(who)) PR(t.p).members.push(who); const msg=document.getElementById('dgMsg').value.trim(); if(msg) t.memo=(t.memo?t.memo+'\n\n':'')+`[依頼メッセージ] ${msg}`; logHist(t.id,`${P(who).name}に依頼`); refresh(); renderDetail(); toast(`${P(who).name}に依頼しました。受諾されるまで「依頼中（未受諾）」です`); }; }
+function openEventDlg(pr){ const dg=document.getElementById('dlgEvent'); document.getElementById('evProject').innerHTML=projects.filter(p=>p.members.includes(ME)).map(p=>`<option value="${p.id}" ${pr&&p.id===pr.id?'selected':''}>${esc(p.name)}</option>`).join(''); document.getElementById('evTitle').value=''; document.getElementById('evStart').value=toISOT(d(1,10)); document.getElementById('evEnd').value=toISOT(d(1,11)); document.getElementById('evPlace').value=''; dg.showModal(); document.getElementById('evCancel').onclick=()=>dg.close(); document.getElementById('frmEvent').onsubmit=()=>{ const t={id:uid(),p:document.getElementById('evProject').value,kind:'event',title:document.getElementById('evTitle').value.trim()||'予定',a:ME,pri:2,h:1,start:new Date(document.getElementById('evStart').value),due:new Date(document.getElementById('evEnd').value),st:'todo',location:document.getElementById('evPlace').value.trim(),repeat:document.getElementById('evRepeat').value,calendar:document.getElementById('evCal').checked?'google':null,links:[]}; t.h=Math.max(0.5,Math.round((t.due-t.start)/3600000*2)/2); t.calId=PR(t.p).calendar||calendars.find(c=>c.primary)?.id; t.origin='ormap'; tasks.push(t); logHist(t.id,'予定を作成'); refresh(); select({type:'task',id:t.id,owner:ME}); toast(t.calendar?'予定を追加し、Google カレンダーにも登録しました（デモ）':'予定を追加しました'); }; }
+
+/* ============ 案件ボード / カンバン（ドラッグでステータス変更） ============ */
+function cardHTML(t,showWait){ const pg=progressOf(t); const over=dueOf(t)&&daysTo(dueOf(t))<0&&t.st!=='done'; const dim=hasFilter()&&!match(t); return `<button class="card ${over?'over':''}" draggable="true" style="--stripe:var(${isEvent(t)?'--event':PRI[t.pri].v});${dim?'opacity:.25':''}" data-id="${t.id}"><span class="t">${isEvent(t)?(t.repeat&&t.repeat!=='none'?'↻ ':'◆ '):''}${esc(t.title)}${t.memo?' <span style="color:var(--muted)">📝</span>':''}${effVis(t)==='private'?' <span style="color:var(--muted)">🔒</span>':''}</span><span class="m"><span>${esc(PR(t.p).name)}</span><span class="who"><span class="avatar" style="width:16px;height:16px;font-size:9px;background:${P(t.a).color}">${P(t.a).name[0]}</span>${P(t.a).name}${P(t.a).external?'<span class="ext">外部</span>':''}${showWait&&pg?`<span class="mono">${pg.done}/${pg.total}</span>`:''}</span></span><span class="m mono"><span>${t.h}h</span><span class="due">${dueOf(t)?'〜'+fmt(dueOf(t)):''}</span></span></button>`; }
+const COLS=[['todo','未着手'],['doing','進行中'],['waiting','対応待ち（自分の依頼）'],['done','完了']];
+const colKey=t=>{ const st=statusFor(ME,t); return st==='requested'?'waiting':st; };
+function columnsHTML(all){ return COLS.map(([key,label])=>{ const items=all.filter(t=>colKey(t)===key).sort((a,b)=>(b.pri-a.pri)||((a.due?daysTo(a.due):999)-(b.due?daysTo(b.due):999))); return `<section class="col" data-col="${key}"><header>${label}<span class="mono">${items.length}</span></header><div class="cards">${items.map(t=>cardHTML(t,key==='waiting')).join('')||'<div style="color:var(--muted);font-size:12px;padding:6px">なし</div>'}</div></section>`; }).join(''); }
+function bindKanban(root){
+  root.querySelectorAll('.card').forEach(c=>{ c.onclick=()=>select({type:'task',id:c.dataset.id,owner:ME}); c.ondragstart=e=>{ e.dataTransfer.setData('text/plain',c.dataset.id); e.dataTransfer.effectAllowed='move'; c.classList.add('dragging'); }; c.ondragend=()=>c.classList.remove('dragging'); });
+  root.querySelectorAll('.col').forEach(col=>{
+    col.ondragover=e=>{ e.preventDefault(); const key=col.dataset.col; col.classList.toggle('over',key!=='waiting'); col.classList.toggle('nodrop',key==='waiting'); };
+    col.ondragleave=()=>col.classList.remove('over','nodrop');
+    col.ondrop=e=>{ e.preventDefault(); col.classList.remove('over','nodrop'); const id=e.dataTransfer.getData('text/plain'); const t=T(id); if(!t) return; const key=col.dataset.col; if(key==='waiting'){ toast('「対応待ち」は依頼で作られます。詳細の「誰かに依頼する」を使ってください'); return; } if(t.a!==ME && t.req!==ME){ toast('自分のタスク（担当または依頼主）だけ動かせます'); return; } if(t.req===ME && t.a!==ME && key!=='done'){ toast('依頼中のタスクの進行状況は担当者が変更します'); return; } t.st=key; logHist(t.id,`${STATUS[key]} に変更`); if(key==='done'&&t.req&&t.req!==t.a) toast(`${P(t.req).name}に完了を通知しました`); else toast(`「${t.title}」を ${STATUS[key]} にしました`); refresh(); if(state.selected&&state.selected.id===id) renderDetail(); };
+  });
+}
+function openBoard(pid){ state.board=pid; renderBoard(); document.getElementById('board').classList.add('show'); }
+function closeBoard(){ state.board=null; document.getElementById('board').classList.remove('show'); }
+function renderBoard(){
+  const pid=state.board; if(!pid) return; const pr=PR(pid); if(!pr){closeBoard();return;} const b=document.getElementById('board');
+  const all=tasks.filter(t=>!t.parent&&t.p===pid&&visibility(ME,t)==='full'&&(state.filters.done||t.st!=='done'));
+  const open=all.filter(t=>t.st!=='done'); const cl=pr.client?CL(pr.client):null;
+  b.innerHTML=`<header>${cl?`<span class="client" style="color:${cl.color}">${esc(cl.name)}</span>`:''}<b>${esc(pr.name)}</b><span class="mono" style="color:var(--muted);font-size:11px">${esc(pr.code)}</span><span style="font-size:11px">${teamBadges(pr)}</span><span class="sum mono">${open.length}件 / ${open.reduce((a,t)=>a+t.h,0)}h 残</span><button class="badge" data-badd>＋ タスク</button><button class="iconbtn" data-close aria-label="閉じる">✕</button></header><div class="cols">${columnsHTML(all)}</div>`;
+  b.querySelector('[data-close]').onclick=closeBoard; b.querySelector('[data-badd]').onclick=()=>{ const t=createTask({type:'project',id:pid},'新しいタスク'); refresh(); select({type:'task',id:t.id,owner:ME}); }; bindKanban(b);
+}
+function renderKanban(){ const k=document.getElementById('kanban'); const all=tasks.filter(t=>!t.parent&&(t.a===ME||t.req===ME)&&(state.filters.done||t.st!=='done')); k.innerHTML=columnsHTML(all); bindKanban(k); }
+
+/* ============ ガント ============ */
+document.getElementById('gMode').onchange=e=>{state.gmode=e.target.value;renderGantt();}; document.getElementById('gCap').onchange=e=>{state.gcap=+e.target.value||25;renderGantt();};
+function renderGantt(){
+  const wrap=document.getElementById('gwrap'); const DAY=22; const start=d(-7); start.setHours(0,0,0,0); const DAYS=70; const width=DAY*DAYS;
+  const x=dt=>Math.round((dt-start)/86400000*DAY); const filt=hasFilter();
+  const base=tasks.filter(t=>!t.parent&&(state.filters.done||t.st!=='done')&&visibility(ME,t)!=='none');
+  const vis=[]; base.forEach(t=>{ if(isEvent(t)&&t.repeat&&t.repeat!=='none'){ occurrencesIn(t,start,new Date(start.getTime()+DAYS*86400000)).forEach(o=>vis.push({...t,start:o.start,due:o.due,_rec:true})); } else vis.push(t); });
+  const rows= state.gmode==='person'
+    ? people.filter(p=>L.centers[p.id]).map(p=>({key:p.id,label:p.full,sub:p.role+(p.external?'（外部）':''),color:p.color,items:vis.filter(t=>t.a===p.id),load:true}))
+    : projects.map(pr=>({key:pr.id,label:pr.name,sub:pr.client&&CL(pr.client)?CL(pr.client).name:'',color:pr.client&&CL(pr.client)?CL(pr.client).color:'#8A93A3',items:vis.filter(t=>t.p===pr.id),load:false})).filter(r=>r.items.length);
+  let head=''; for(let i=0;i<DAYS;i+=7){ const dt=new Date(start); dt.setDate(dt.getDate()+i); head+=`<span class="gweek" style="left:${i*DAY+4}px">${dt.getMonth()+1}/${dt.getDate()}週</span>`; }
+  const todayX=x(TODAY);
+  const lanes=items=>{ const ends=[]; return items.sort((a,b)=>(a.start||a.due)-(b.start||b.due)).map(t=>{ const s0=t.start||new Date((t.due||TODAY)-2*86400000), e0=t.due||new Date(s0.getTime()+86400000); let ln=ends.findIndex(e=>e<=s0); if(ln<0){ln=ends.length;ends.push(0);} ends[ln]=e0.getTime()+86400000; return {t,s0,e0,ln}; }); };
+  let html=`<div class="gtable" style="--day:${DAY}px"><div class="grow ghead"><div class="gname">${state.gmode==='person'?'スタッフ':'案件'}</div><div class="gcell" style="width:${width}px;height:24px">${head}<div class="gtoday" style="left:${todayX}px"></div></div></div>`;
+  rows.forEach(r=>{
+    const L2=lanes(r.items); const nl=Math.max(1,...L2.map(o=>o.ln+1)); const h=nl*22+(r.load?22:6)+6;
+    const bars=L2.map(({t,s0,e0,ln})=>{ const x0=Math.max(0,x(s0)), x1=Math.min(width,x(e0)+DAY); const g=visibility(ME,t)==='ghost'; const wait=isDelegated(t)&&t.st!=='done'&&r.key===t.req; const dim=filt&&!match(t); return `<button class="gtask ${wait?'wait':''} ${isEvent(t)?'event':''} ${t.st==='done'?'done':''} ${dim?'dim':''}" ${g?'disabled':''} data-id="${t.id}" style="left:${x0}px;width:${Math.max(x1-x0,DAY)}px;top:${4+ln*22}px;background:${g?'var(--ghost)':`var(${PRI[t.pri].v})`};${t._rec?'border:1.5px dashed #fff':''}" title="${g?'非公開':esc(t.title)+' '+t.h+'h'+(t._rec?'（'+REPEAT[t.repeat]+'）':'')}">${g?'':(t._rec?'↻ ':'')+esc(t.title)+' <span class="mono">'+t.h+'h</span>'}</button>`; }).join('');
+    let load='';
+    if(r.load){ for(let i=0;i<DAYS;i+=7){ const ws=new Date(start); ws.setDate(ws.getDate()+i); const we=new Date(ws); we.setDate(we.getDate()+7); let hrs=0;
+        r.items.filter(t=>t.st!=='done'&&(!filt||match(t))).forEach(t=>{ const s0=t.start||new Date((t.due||TODAY)-2*86400000), e0=t.due||new Date(s0.getTime()+86400000); const days=Math.max(1,Math.round((e0-s0)/86400000)+1); const os=Math.max(s0,ws), oe=Math.min(new Date(e0.getTime()+86400000),we); const od=Math.max(0,(oe-os)/86400000); hrs+=t.h*od/days; });
+        const ratio=hrs/state.gcap; const col=ratio>1?'var(--pri4)':ratio>0.5?'var(--pri3)':'var(--accent)'; if(hrs>0.05) load+=`<div class="gload" style="left:${i*DAY+2}px;width:${7*DAY-4}px;background:${col};opacity:${0.35+Math.min(ratio,1.5)*0.4}"><span>${Math.round(hrs)}h</span></div>`; } }
+    html+=`<div class="grow"><div class="gname" style="height:${h}px"><span class="avatar" style="width:22px;height:22px;font-size:10px;background:${r.color}">${r.label[0]}</span><span>${esc(r.label)}<small>${esc(r.sub)}${r.load?` ・ <span class="mono">${r.items.filter(t=>t.st!=='done'&&(!filt||match(t))).reduce((a,t)=>a+t.h,0)}h 残</span>`:''}</small></span></div><div class="gcell" style="width:${width}px;height:${h}px">${bars}${load}<div class="gtoday" style="left:${todayX}px"></div></div></div>`;
+  });
+  wrap.innerHTML=html+'</div>';
+  wrap.querySelectorAll('.gtask:not([disabled])').forEach(b=>b.onclick=()=>select({type:'task',id:b.dataset.id,owner:ME}));
+}
+
+/* ============ rail / filters / views ============ */
+const openTeams=new Set();
+function renderRail(){
+  const visibleTeams=teams.filter(t=> isExec(ME) || t.members.includes(ME));
+  document.getElementById('teamList').innerHTML=visibleTeams.map(tm=>{ const open=openTeams.has(tm.id); const cnt=projects.filter(p=>(p.teams||[]).includes(tm.id)).length; return `<div class="team"><button class="name" data-team="${tm.id}" aria-pressed="${state.filters.team===tm.id}" title="クリックでこのチームの案件に絞り込み">${esc(tm.name)}${tm.exec?'<span class="exec">全体</span>':''}<span class="cnt mono">${cnt}案件・${tm.members.length}人</span></button><button class="tg" data-tg="${tm.id}" aria-label="メンバーを${open?'閉じる':'開く'}">${open?'▾':'▸'}</button></div><div class="members" ${open?'':'hidden'}>${tm.members.map(id=>{ const p=P(id); if(!p||!L.centers[id]) return ''; const n=tasksOf(id).filter(t=>t.a===id&&t.st!=='done'&&(!hasFilter()||match(t))); return `<button class="person" data-id="${id}" aria-current="${id===state.focus}" title="クリックでこの人へ移動"><span class="avatar" style="background:${p.color}">${p.name[0]}</span><span class="meta"><span>${p.full}${p.external?'<span class="ext">外部</span>':''}</span><small>${p.role} ・ <span class="mono">${n.length}件 / ${n.reduce((a,t)=>a+t.h,0)}h</span></small></span></button>`; }).join('')}</div>`; }).join('');
+  document.querySelectorAll('.person').forEach(b=>b.onclick=()=>focusPerson(b.dataset.id));
+  document.querySelectorAll('[data-tg]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const id=b.dataset.tg; openTeams.has(id)?openTeams.delete(id):openTeams.add(id); renderRail(); });
+  document.querySelectorAll('[data-team]').forEach(b=>b.onclick=()=>{ const id=b.dataset.team; state.filters.team = state.filters.team===id ? null : id; refresh(); toast(state.filters.team?`チーム「${TM(id).name}」の案件で絞り込み（他は薄く表示）`:'チームの絞り込みを解除'); });
+  const sel=document.getElementById('fProject'); const cur=sel.value; sel.innerHTML='<option value="all">すべての案件</option>'+projects.map(p=>`<option value="${p.id}">${p.client&&CL(p.client)?CL(p.client).name+' / ':''}${p.name}</option>`).join(''); sel.value=cur||'all';
+  const pri=document.getElementById('fPri'); if(!pri.children.length){ pri.innerHTML=[4,3,2,1].map(i=>`<button class="chip" data-pri="${i}" aria-pressed="true"><span class="dot" style="background:var(${PRI[i].v})"></span>${PRI[i].n}</button>`).join(''); pri.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ const i=+c.dataset.pri; if(state.filters.pris.has(i)) state.filters.pris.delete(i); else state.filters.pris.add(i); c.setAttribute('aria-pressed',state.filters.pris.has(i)); refresh(); }); }
+  const mine=tasksOf(ME).filter(t=>!hasFilter()||match(t)); const open=mine.filter(t=>t.st!=='done');
+  document.getElementById('sTasks').textContent=open.filter(t=>t.a===ME).length;
+  document.getElementById('sHours').textContent=open.filter(t=>t.a===ME).reduce((a,t)=>a+t.h,0)+'h';
+  document.getElementById('sWait').textContent=open.filter(t=>t.req===ME&&t.a!==ME).length;
+  document.getElementById('sRecv').textContent=open.filter(t=>t.a===ME&&t.req&&t.req!==ME).length;
+  document.getElementById('btnMe').style.background=P(ME).color; document.getElementById('btnMe').textContent=P(ME).name[0];
+}
+document.querySelectorAll('[data-stat]').forEach(b=>b.onclick=()=>{ const k=b.dataset.stat; const f=state.filters; if(k==='sent'){ f.req=f.req==='sent'?'all':'sent'; } else if(k==='received'){ f.req=f.req==='received'?'all':'received'; } else { f.req='all'; } document.getElementById('fReq').value=f.req; refresh(); });
+document.getElementById('fProject').onchange=e=>{state.filters.project=e.target.value;refresh();};
+document.getElementById('fReq').onchange=e=>{state.filters.req=e.target.value;refresh();};
+document.getElementById('fPeriod').onchange=e=>{state.filters.period=e.target.value;refresh();};
+document.getElementById('fKind').onchange=e=>{state.filters.kind=e.target.value;refresh();};
+document.getElementById('fDone').onchange=e=>{state.filters.done=e.target.checked;refresh();};
+document.getElementById('clearFilters').onclick=clearFilters;
+function clearFilters(){ Object.assign(state.filters,{project:'all',team:null,req:'all',period:'all',kind:'all',pris:new Set([1,2,3,4]),text:''}); ['fProject','fReq','fPeriod','fKind'].forEach(id=>document.getElementById(id).value='all'); document.getElementById('q').value=''; document.querySelectorAll('#fPri .chip').forEach(c=>c.setAttribute('aria-pressed','true')); refresh(); }
+function refresh(){ L=layout(); renderRail(); if(state.view==='map'){ draw(); if(state.board) renderBoard(); } else if(state.view==='kanban') renderKanban(); else renderGantt(); }
+function setView(v){ state.view=v; hideQuick(); ['map','kanban','gantt'].forEach(k=>document.getElementById('v'+k[0].toUpperCase()+k.slice(1)).setAttribute('aria-pressed',v===k)); document.getElementById('kanban').classList.toggle('show',v==='kanban'); document.getElementById('gantt').classList.toggle('show',v==='gantt'); document.querySelector('.hud').style.display=v==='map'?'':'none'; document.getElementById('board').style.display=v==='map'?'':'none'; refresh(); }
+document.getElementById('vMap').onclick=()=>setView('map'); document.getElementById('vKanban').onclick=()=>setView('kanban'); document.getElementById('vGantt').onclick=()=>setView('gantt');
+document.getElementById('btnRail').onclick=()=>{document.getElementById('rail').classList.toggle('open');document.getElementById('panel').classList.remove('open');};
+document.getElementById('btnPanel').onclick=()=>{document.getElementById('panel').classList.toggle('open');document.getElementById('rail').classList.remove('open');};
+document.getElementById('panelClose').onclick=()=>document.getElementById('panel').classList.remove('open');
+
+/* AI ポップアップ：高さドラッグ・折りたたみ */
+(function(){ const el=document.getElementById('aiBox'), g=document.getElementById('aiGrip'); g.onpointerdown=e=>{ if(el.classList.contains('collapsed')) return; const startY=e.clientY, startH=el.getBoundingClientRect().height; g.setPointerCapture(e.pointerId); const move=ev=>{ el.style.height=Math.max(120, Math.min(document.getElementById('stage').clientHeight-40, startH+(startY-ev.clientY)))+'px'; }; const up=()=>{ g.removeEventListener('pointermove',move); g.removeEventListener('pointerup',up); }; g.addEventListener('pointermove',move); g.addEventListener('pointerup',up); }; document.getElementById('aiCollapse').onclick=()=>{ el.classList.toggle('collapsed'); document.getElementById('aiCollapse').textContent=el.classList.contains('collapsed')?'＋':'—'; }; })();
+
+/* ============ 通知 / アカウントメニュー / ログイン / 検索 ============ */
+function renderNotifBadge(){ const n=notifications.filter(x=>!x.read).length; const b=document.getElementById('notifN'); b.hidden=!n; b.textContent=n; }
+function renderNotif(){ document.getElementById('notifList').innerHTML=notifications.map(n=>`<button class="nitem ${n.read?'':'unread'}" data-n="${n.id}"><span>${{request:'📨',progress:'📈',due:'⏰',calendar:'📅',done:'✅',accepted:'🤝',info:'ℹ️',mcp:'◆'}[n.type]||'ℹ️'}</span><span><span class="t">${esc(n.text)}</span><small>${fmtT(n.at)}</small></span></button>`).join('')||'<div style="padding:14px;color:var(--muted);font-size:13px">通知はありません</div>'; document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ const n=notifications.find(x=>x.id===b.dataset.n); n.read=true; renderNotifBadge(); closePopovers(); if(n.task&&T(n.task)) select({type:'task',id:n.task,owner:ME}); }); }
+document.getElementById('btnNotif').onclick=e=>{ e.stopPropagation(); const el=document.getElementById('notif'); const show=!el.classList.contains('show'); closePopovers(); if(show){ renderNotif(); el.classList.add('show'); } };
+document.getElementById('notifReadAll').onclick=()=>{ notifications.forEach(n=>n.read=true); renderNotifBadge(); renderNotif(); };
+document.getElementById('btnMe').onclick=e=>{ e.stopPropagation(); const m=document.getElementById('meMenu'); const show=!m.classList.contains('show'); closePopovers(); if(!show) return; const p=P(ME); m.innerHTML=`<div class="hd"><b>${esc(p.full)}</b><br>${esc(p.email)}<br><span class="mono">${p.code}</span> ・ ${esc(org.name)}</div><button data-m="profile">プロフィール</button><button data-m="settings">設定</button><button data-m="help">読み方とショートカット</button><button data-m="logout">サインアウト</button>`; m.classList.add('show'); m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ closePopovers(); ({profile:()=>openSettings('profile'),settings:()=>openSettings('profile'),help:openHelp,logout:()=>{document.getElementById('login').classList.add('show');}})[b.dataset.m](); }); };
+document.addEventListener('click',e=>{ if(!e.target.closest('.notif,.menu,#btnNotif,#btnMe,.search')) closePopovers(); });
+['loginMagic','loginGoogle','loginApple'].forEach(id=>document.getElementById(id).onclick=()=>{ document.getElementById('login').classList.remove('show'); toast(id==='loginMagic'?`${document.getElementById('loginEmail').value} にリンクを送りました（デモ：即サインイン）`:'サインインしました（デモ）'); });
+const qEl=document.getElementById('q');
+qEl.oninput=()=>{ const v=qEl.value.trim(); state.filters.text=v; const res=document.getElementById('searchres'); if(!v){ res.classList.remove('show'); refresh(); return; } const lv=v.toLowerCase(); const ts=tasks.filter(t=>!t.parent&&visibility(ME,t)==='full'&&(t.title+' '+(t.memo||'')).toLowerCase().includes(lv)).slice(0,8); const ps=projects.filter(p=>(p.name+' '+(p.desc||'')+' '+(p.code||'')).toLowerCase().includes(lv)).slice(0,4); const pe=people.filter(p=>canSeePerson(p.id)&&(p.full+' '+p.role).toLowerCase().includes(lv)).slice(0,4); res.innerHTML=[...pe.map(p=>`<button data-sp="${p.id}">${esc(p.full)}<small>${esc(p.role)} ・ 移動</small></button>`),...ps.map(p=>`<button data-spr="${p.id}">${esc(p.name)}<small>案件 ・ ${esc(p.code)}</small></button>`),...ts.map(t=>`<button data-st="${t.id}">${esc(t.title)}<small>${esc(PR(t.p).name)} ・ ${P(t.a).name} ・ 〜${fmt(t.due)}</small></button>`)].join('')||'<button disabled>該当なし</button>'; res.classList.add('show'); res.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{closePopovers();focusPerson(b.dataset.sp);}); res.querySelectorAll('[data-spr]').forEach(b=>b.onclick=()=>{closePopovers();select({type:'project',id:b.dataset.spr,owner:ME});openBoard(b.dataset.spr);}); res.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{closePopovers();select({type:'task',id:b.dataset.st,owner:ME});}); refresh(); };
+qEl.onfocus=()=>{ if(qEl.value.trim()) document.getElementById('searchres').classList.add('show'); };
+qEl.onkeydown=e=>{ e.stopPropagation(); if(e.key==='Escape'){ qEl.value=''; qEl.oninput(); qEl.blur(); } };
+
+/* ============ 設定画面 ============ */
+let secNow='profile';
+function openSettings(sec){ secNow=sec||'profile'; renderSettings(); document.getElementById('dlgSettings').showModal(); }
+document.getElementById('btnSettings').onclick=()=>openSettings(secNow);
+document.querySelectorAll('#snav [data-sec]').forEach(b=>b.onclick=()=>{ secNow=b.dataset.sec; renderSettings(); });
+const onoff=(v)=>`<span class="badge" style="${v?'border-color:var(--accent);color:var(--accent)':''}">${v?'ON':'OFF'}</span>`;
+function renderSettings(){
+  document.querySelectorAll('#snav [data-sec]').forEach(b=>b.setAttribute('aria-current',b.dataset.sec===secNow));
+  const S=document.getElementById('sbody'); const me=P(ME); const closeBtn=`<button class="iconbtn" data-sclose aria-label="閉じる">✕</button>`;
+  const secs={
+    profile:()=>`<h2>プロフィール ${closeBtn}</h2><dl class="kv"><dt>表示名</dt><dd>${ed(me,'full',esc(me.full),'text')}</dd><dt>役割</dt><dd>${ed(me,'role',esc(me.role),'text')}</dd><dt>メール</dt><dd>${esc(me.email)}</dd><dt>ユーザーコード</dt><dd><span class="mono">${me.code}</span> <button class="badge" data-copy="${me.code}">コピー</button><small style="display:block;color:var(--muted)">他の組織に社外スタッフとして接続するときに伝えるコードです。メールは公開されません。</small></dd><dt>アバター色</dt><dd><input type="color" value="${me.color}" data-color style="width:48px;height:28px;padding:0;border:0;background:none"></dd><dt>所属チーム</dt><dd>${teamsOf(ME).map(t=>`<span class="badge">${esc(TM(t).name)}</span>`).join(' ')}</dd><dt>週の稼働上限</dt><dd class="mono">${ed({id:'__org',capacity:org.capacity},'capacity',org.capacity+'h','number')}</dd></dl><div class="actions"><button data-logout>サインアウト</button><button data-devices>端末の管理（3台まで）</button></div>`,
+    appearance:()=>`<h2>表示・テーマ ${closeBtn}</h2><div class="field"><label>テーマ</label><div class="seg" style="width:max-content">${['system','light','dark'].map(t=>`<button data-theme2="${t}" aria-pressed="${themeNow()===t}">${{system:'システムに合わせる',light:'ライト',dark:'ダーク'}[t]}</button>`).join('')}</div></div><div class="field"><label>絞り込みで該当しないものの薄さ</label><input type="range" min="5" max="30" value="${Math.round(DIMV*100)}" data-dim style="width:240px"> <span class="mono" id="dimVal">${Math.round(DIMV*100)}%</span></div><div class="field"><label>マップの初期表示</label><select data-initview style="width:240px"><option value="me">自分の放射に合わせる</option><option value="all">全員を表示</option></select></div>`,
+    shortcuts:()=>`<h2>ショートカット ${closeBtn}</h2><p style="margin:0;color:var(--muted);font-size:13px">キーをクリックして、割り当てたいキーを押します。入力欄にフォーカスがあるときは発火しません。</p><table class="sctable" id="scTable2"></table><div class="actions"><button data-screset>初期値に戻す</button></div>`,
+    notify:()=>`<h2>通知 ${closeBtn}</h2><div class="list">${Object.entries({request:'依頼を受けた',accepted:'依頼が受諾／辞退された',done:'依頼が完了した',progress:'細分化タスクが進んだ',due:'期限の前日・当日',digest:'日次サマリ（メール 8:00）'}).map(([k,l])=>`<div class="row"><span class="grow">${l}</span><button class="badge" data-ntg="${k}">${settings.notify[k]?'ON':'OFF'}</button></div>`).join('')}</div><p style="color:var(--muted);font-size:12px">段階1・2はアプリ内通知（ブラウザ通知は許可すれば有効）。iOS プッシュは段階3。</p><div class="actions"><button data-browsernotif>ブラウザ通知を許可する</button></div>`,
+    ai:()=>`<h2>AI 連携（MCP / BYOK） ${closeBtn}</h2><div class="list">
+      <div class="row"><span class="grow"><b>0. AI を使わない</b><small>手入力・カンバン・ガント・検索・音声入力（ブラウザ標準）はすべて使えます。AI アシスタントは非表示</small></span>${onoff(settings.ai.mode==='none')}<div class="act"><button data-aimode="none">選ぶ</button></div></div>
+      <div class="row"><span class="grow"><b>A. 自分の AI から使う（MCP・推奨）</b><small>費用は自分の契約で。Claude Desktop / claude.ai / Claude Code のほか、ChatGPT・Cursor・Gemini CLI など MCP 対応クライアントなら接続可</small></span>${onoff(settings.ai.mode==='mcp')}<div class="act"><button data-aimode="mcp">選ぶ</button></div></div>
+      <div class="row"><span class="grow">MCP サーバー URL<small class="mono">${settings.ai.mcpUrl}</small></span><div class="act"><button data-copy="${settings.ai.mcpUrl}">コピー</button><button data-mcpguide">接続手順</button></div></div>
+      <div class="row"><span class="grow">接続済みクライアント<small>Claude Desktop（佐々木 MacBook）・Claude Code</small></span><div class="act"><button data-mcpsim>Claude からの操作を試す</button><button data-revoke>すべて失効</button></div></div>
+      <div class="row" style="font-size:12px;color:var(--muted)"><span class="grow">Claude 側で行った操作（タスク作成・完了・メモ追記・リンク登録）は MCP ツール → 同じ DB → リアルタイム配信で数秒以内に画面へ反映。履歴に「Claude 経由」と記録し、削除・依頼送信は Claude からはできない（提案として通知し、ORMAP 側で確定）</span></div>
+      <div class="row"><span class="grow"><b>B. 自分の API キーでアプリ内チャット（BYOK）</b><small>Anthropic / OpenAI / Google のキーに対応。キーはこの端末にだけ保存し、サーバーへは送りません</small></span>${onoff(settings.ai.mode==='byok')}<div class="act"><button data-aimode="byok">選ぶ</button></div></div>
+      ${settings.ai.mode==='byok'?`<div class="row"><span class="grow">提供元とキー</span><select data-aiprov style="width:auto"><option value="anthropic" ${settings.ai.provider==='anthropic'?'selected':''}>Anthropic（Claude）</option><option value="openai" ${settings.ai.provider==='openai'?'selected':''}>OpenAI（GPT）</option><option value="google" ${settings.ai.provider==='google'?'selected':''}>Google（Gemini）</option></select><input type="text" data-apikey placeholder="API キー" style="max-width:220px"><select data-aimodel style="width:auto">${({anthropic:[['claude-sonnet-5','Sonnet 5（既定）'],['claude-opus-5','Opus 5'],['claude-haiku-4-5','Haiku 4.5（安価）']],openai:[['gpt-5-mini','GPT-5 mini'],['gpt-5','GPT-5']],google:[['gemini-2.5-flash','Gemini 2.5 Flash'],['gemini-2.5-pro','Gemini 2.5 Pro']]})[settings.ai.provider||'anthropic'].map(([v,l])=>`<option value="${v}" ${settings.ai.model===v?'selected':''}>${l}</option>`).join('')}</select></div>`:''}
+      <div class="row"><span class="grow"><b>C. 音声入力</b><small>マイクボタン／ショートカット V で起動。AI 費用なし</small></span><select data-voice style="width:auto"><option value="browser" ${settings.voice.mode==='browser'?'selected':''}>ブラウザ標準（Web Speech）</option><option value="aquavoice" ${settings.voice.mode==='aquavoice'?'selected':''}>AquaVoice（ORMAP Desk 経由）</option></select></div>
+      <div class="row"><span class="grow"><b>D. AI 音声議事録</b><small>録音：superwhisper（ORMAP Desk 経由）／文字起こしファイルの投入／テキスト貼り付け のいずれか。要約：MCP 接続中の AI か BYOK。AI がなければ文字起こしの保存だけ行い、要約は手動</small></span>${onoff(settings.desk.connected||settings.ai.mode!=='none')}<div class="act"><button data-minutesdir>保存先</button><button data-minutesupload>文字起こしを投入</button></div></div></div>`,
+    calendar:()=>`<h2>カレンダー連携 ${closeBtn}</h2><div class="list"><div class="row"><span class="g" style="width:24px;height:24px;border-radius:6px;background:#fff;color:#1a73e8;display:grid;place-items:center;font-weight:700;border:1px solid var(--line)">G</span><span class="grow">Google カレンダー<small>${settings.calendar.connected?'接続済み：'+esc(settings.calendar.calendar):'未接続'}</small></span><div class="act"><button data-calconnect>${settings.calendar.connected?'接続を解除':'Google で接続'}</button></div></div></div>
+      <h3 class="sec" style="margin-top:8px">カレンダーの種類 ＝ 事業体（カレンダーごとに 同期する／事業体／取り込み先 を設定）</h3>
+      <div class="list">${calendars.map(c=>`<div class="row"><span class="dot" style="width:14px;height:14px;border-radius:50%;background:${c.color}"></span><span class="grow"><b>${esc(c.name)}</b>${c.primary?' <span class="badge">既定</span>':''}<small>${c.sync?'双方向同期 ON':'同期しない'} ・ 事業体：${c.entity||'—'} ・ カレンダー側で作った予定の取り込み先：${c.importTo&&PR(c.importTo)?esc(PR(c.importTo).name):'取り込まない'}</small></span><div class="act"><button class="badge" data-calsync="${c.id}">${c.sync?'ON':'OFF'}</button><select data-calentity="${c.id}" style="width:auto"><option value="">—</option>${['サンプル社','法人B','個人事業','団体C','共通'].map(e=>`<option ${c.entity===e?'selected':''}>${e}</option>`).join('')}</select><select data-calimport="${c.id}" style="width:auto"><option value="">取り込まない</option>${projects.filter(p=>p.members.includes(ME)).map(p=>`<option value="${p.id}" ${c.importTo===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div></div>`).join('')}</div>
+      <h3 class="sec" style="margin-top:8px">同期のルール</h3>
+      <div class="list" style="font-size:12px;color:var(--muted)"><div class="row"><span class="grow">ORMAP で予定を作る → 案件の「予定の同期先」カレンダーに登録（予定ごとに変更可）。ORMAP 側の ID を予定の拡張プロパティに埋め、往復の二重登録を防ぐ</span></div><div class="row"><span class="grow">Google カレンダーで予定を作る → そのカレンダーの「取り込み先」の案件（受け皿）に予定として取り込む。あとで案件を変えられる。取り込み先が未設定なら無視</span></div><div class="row"><span class="grow">Google 側でカレンダーを移動 → ORMAP の同期先と事業体を追従（案件は変えない）。Google 側で削除 → ORMAP では「カレンダーから削除された」印を付けて残し、通知（自動では消さない）。ORMAP 側で削除 → Google からも削除</span></div><div class="row"><span class="grow">同じ予定を両側で編集 → 更新時刻の新しい方を採用し、履歴に両方を残す。定例は RRULE で対応付け、1回だけの変更は例外として保持</span></div></div>
+      <div class="list" style="margin-top:8px">
+      <div class="row"><span class="grow">予定をカレンダーに自動登録<small>ORMAP で作った予定を書き込む</small></span>${onoff(true)}</div>
+      <div class="row"><span class="grow">カレンダー側の変更を取り込む<small>時刻・場所の変更を ORMAP に反映（push 通知）</small></span>${onoff(true)}</div>
+
+      <div class="row"><span class="grow">Outlook / iCloud</span><span class="badge">段階3以降</span></div></div>`,
+    desk:()=>`<h2>ORMAP Desk（ローカル連携） ${closeBtn}</h2><p style="margin:0;color:var(--muted);font-size:13px">フォルダを Finder で開く、Claude Code セッションをターミナルで再開する、といったローカル操作を担う常駐アプリです。ブラウザからは直接できないため、<span class="mono">ormap://</span> リンクで呼び出します。</p><div class="list"><div class="row"><span class="grow">この Mac<small>${settings.desk.connected?'接続済み ・ v'+settings.desk.version:'未接続'}</small></span>${onoff(settings.desk.connected)}<div class="act"><button data-deskdl>ダウンロード（macOS）</button><button data-desktest>接続テスト</button></div></div>
+      <div class="row"><span class="grow">ターミナル</span><select data-deskterm style="width:auto">${['Terminal','iTerm','Warp','Ghostty'].map(t=>`<option ${settings.desk.terminal===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="row"><span class="grow">任意コマンドの実行前に確認する</span>${onoff(true)}</div>
+      <div class="row"><span class="grow">Windows 版</span><span class="badge">段階2で対応（Explorer・PowerShell）</span></div></div>`,
+    org:()=>`<h2>組織 ${closeBtn}</h2><dl class="kv"><dt>組織名</dt><dd>${ed({id:'__orgname'},'name',esc(org.name),'text')}</dd><dt>プラン</dt><dd>${esc(org.plan)}<small style="display:block;color:var(--muted)">課金・座席管理は段階3で有効化</small></dd><dt>案件の作成権限</dt><dd><select data-orgcreate style="width:auto"><option value="all" ${org.projectCreate==='all'?'selected':''}>全員</option><option value="admin" ${org.projectCreate==='admin'?'selected':''}>管理者とリーダーのみ</option></select></dd><dt>既定の週稼働上限</dt><dd class="mono">${org.capacity}h</dd><dt>データの所在</dt><dd>${esc(org.dataRegion)}</dd><dt>法人タグ</dt><dd><span class="badge">サンプル社</span> <span class="badge">法人B</span> <span class="badge">個人事業</span> <span class="badge">団体C</span> <span class="badge">共通</span></dd></dl>`,
+    teams:()=>`<h2>チーム <button class="badge" data-teamadd>＋ チームを作成</button> ${closeBtn}</h2><div class="list">${teams.map(t=>`<div class="row"><span class="grow"><b>${esc(t.name)}</b>${t.exec?'<span class="exec">経営層：全体が見える</span>':''}<small>${t.members.map(m=>P(m)?P(m).name+(P(m).external?'(外部)':''):'').join('・')||'メンバーなし'} ・ ${projects.filter(p=>(p.teams||[]).includes(t.id)).length}案件</small></span><div class="act"><button data-teammem="${t.id}">メンバー</button><button data-teamren="${t.id}">名称</button>${t.exec?'':`<button data-teamdel="${t.id}">削除</button>`}</div></div>`).join('')}</div>`,
+    members:()=>`<h2>メンバー <button class="badge" data-invite>＋ 社内メンバーを招待</button> <button class="badge" data-extadd>＋ 社外スタッフを接続</button> ${closeBtn}</h2><div class="list">${people.map(p=>`<div class="row"><span class="avatar" style="background:${p.color}">${p.name[0]}</span><span class="grow"><b>${esc(p.full)}</b>${p.external?'<span class="ext">外部</span>':''}${p.exec?'<span class="exec">経営層</span>':''}<small>${esc(p.role)} ・ ${esc(p.email)} ・ <span class="mono">${p.code}</span> ・ ${teamsOf(p.id).map(t=>TM(t).name).join('・')||'チーム未所属'}</small></span><div class="act"><select data-orgrole="${p.id}" style="width:auto"><option value="owner" ${p.orgRole==='owner'?'selected':''}>オーナー</option><option value="admin" ${p.orgRole==='admin'?'selected':''}>管理者</option><option value="member" ${p.orgRole==='member'?'selected':''}>メンバー</option></select><button data-execflag="${p.id}">${p.exec?'経営層を外す':'経営層にする'}</button>${p.id!==ME?`<button data-memdel="${p.id}">削除</button>`:''}</div></div>`).join('')}</div>`,
+    clients:()=>`<h2>クライアント <button class="badge" data-cladd>＋ 追加</button> ${closeBtn}</h2><div class="list">${clients.map(c=>`<div class="row"><span class="dot" style="width:14px;height:14px;border-radius:50%;background:${c.color}"></span><span class="grow"><b>${esc(c.name)}</b><small><span class="mono">${esc(c.code||'コードなし')}</span> ・ ${projects.filter(p=>p.client===c.id).length}案件</small></span><div class="act"><input type="color" value="${c.color}" data-clcolor="${c.id}" style="width:32px;height:26px;padding:0;border:0;background:none"><button data-clren="${c.id}">名称</button><button data-cldel="${c.id}">削除</button></div></div>`).join('')}</div>`,
+    projects:()=>`<h2>案件一覧 <button class="badge" data-newproj>＋ 案件を作成</button> ${closeBtn}</h2><div class="list">${projects.map(p=>{ const open=tasks.filter(t=>!t.parent&&t.p===p.id&&t.st!=='done'); return `<div class="row"><span class="grow"><b>${esc(p.name)}</b> <span class="mono" style="color:var(--muted);font-size:11px">${esc(p.code)}</span><small>${p.client&&CL(p.client)?CL(p.client).name+' ・ ':''}${(p.teams||[]).map(t=>TM(t)?TM(t).name:'').join('・')||'チームなし'} ・ ${p.members.length}人 ・ ${open.length}件 / ${open.reduce((a,t)=>a+t.h,0)}h ・ ${VIS[p.vis]}</small></span><div class="act"><button data-projopen="${p.id}">開く</button><button data-projarch="${p.id}">アーカイブ</button></div></div>`; }).join('')}${archived.length?`<h3 class="sec" style="margin-top:12px">アーカイブ済み</h3>${archived.map(p=>`<div class="row" style="opacity:.7"><span class="grow">${esc(p.name)}</span><div class="act"><button data-projrestore="${p.id}">戻す</button></div></div>`).join('')}`:''}</div>`,
+    data:()=>`<h2>データ ${closeBtn}</h2><div class="list"><div class="row"><span class="grow">エクスポート<small>案件・タスク・予定・メモを JSON / CSV で書き出し</small></span><div class="act"><button data-export="json">JSON</button><button data-export="csv">CSV</button></div></div><div class="row"><span class="grow">インポート<small>Notion タスクDB / CSV から取り込み（段階2）</small></span><div class="act"><button data-import>ファイルを選ぶ</button></div></div><div class="row"><span class="grow">基幹システム・Notion との同期<small>案件コード・顧客コードで対応付け</small></span><span class="badge">v1.x</span></div><div class="row"><span class="grow" style="color:var(--pri4)">組織を削除</span><div class="act"><button data-orgdel>削除…</button></div></div></div>`,
+  };
+  S.innerHTML=(secs[secNow]||secs.profile)();
+  S.querySelector('[data-sclose]').onclick=()=>document.getElementById('dlgSettings').close();
+  bindSettings(S);
+}
+let DIMV=0.14;
+function bindSettings(S){
+  const rerender=()=>{ renderSettings(); refresh(); };
+  S.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{ navigator.clipboard?.writeText(b.dataset.copy); toast('コピーしました'); });
+  S.querySelectorAll('[data-theme2]').forEach(b=>b.onclick=()=>{ applyTheme(b.dataset.theme2); renderSettings(); });
+  S.querySelectorAll('[data-dim]').forEach(r=>r.oninput=()=>{ DIMV=+r.value/100; document.getElementById('dimVal').textContent=r.value+'%'; draw(); });
+  S.querySelectorAll('[data-color]').forEach(i=>i.oninput=()=>{ P(ME).color=i.value; refresh(); });
+  S.querySelectorAll('[data-ntg]').forEach(b=>b.onclick=()=>{ settings.notify[b.dataset.ntg]=!settings.notify[b.dataset.ntg]; renderSettings(); });
+  S.querySelectorAll('[data-browsernotif]').forEach(b=>b.onclick=()=>{ if(window.Notification) Notification.requestPermission().then(p=>toast('ブラウザ通知：'+p)); else toast('このブラウザは通知に非対応です'); });
+  S.querySelectorAll('[data-aimode]').forEach(b=>b.onclick=()=>{ settings.ai.mode=b.dataset.aimode; applyAiMode(); renderSettings(); });
+  S.querySelectorAll('[data-aiprov]').forEach(sel=>sel.onchange=()=>{ settings.ai.provider=sel.value; settings.ai.model={anthropic:'claude-sonnet-5',openai:'gpt-5-mini',google:'gemini-2.5-flash'}[sel.value]; renderSettings(); });
+  S.querySelectorAll('[data-minutesupload]').forEach(b=>b.onclick=()=>{ const i=document.createElement('input'); i.type='file'; i.accept='.txt,.md,.srt,.vtt'; i.onchange=()=>toast(`${i.files[0]?.name} を議事録フォルダに保存しました。${settings.ai.mode==='none'?'AI 未接続のため要約は手動です':'要約を生成します'}（デモ）`); i.click(); });
+  S.querySelectorAll('[data-voice]').forEach(sel=>sel.onchange=()=>{ settings.voice.mode=sel.value; toast(sel.value==='aquavoice'?'マイクボタンで AquaVoice を起動します（ORMAP Desk 経由）':'ブラウザ標準の音声認識を使います'); });
+  S.querySelectorAll('[data-minutesdir]').forEach(b=>b.onclick=()=>toast('保存先：案件フォルダ/議事録/YYYY-MM-DD_件名/（transcript.txt と 議事録.md）'));
+  S.querySelectorAll('[data-aimodel]').forEach(s=>s.onchange=()=>{ settings.ai.model=s.value; toast('モデルを '+s.value+' にしました'); });
+  S.querySelectorAll('[data-apikey]').forEach(i=>i.onchange=()=>toast('API キーをこの端末に保存しました（デモ：保存しません）'));
+  S.querySelectorAll('[data-mcpguide]').forEach(b=>b.onclick=()=>toast('Claude Desktop › 設定 › コネクタ › カスタムコネクタを追加 › URL を貼り付け › ORMAP でサインイン（デモ）'));
+  S.querySelectorAll('[data-mcpsim]').forEach(b=>b.onclick=()=>{ document.getElementById('dlgSettings').close(); const p=PR('inspection')||projects[0]; const t={id:uid(),p:p.id,title:'（Claude から）BLE 検証結果のレビュー',a:ME,pri:3,h:1,start:d(0),due:d(2),st:'todo',vis:'inherit',links:(p.links||[]).map(l=>({...l,inherited:true})),memo:'[Claude Desktop 2026-09-09 10:12] 佐藤さんの検証レポートを読んでレビューする。'}; tasks.push(t); logHist(t.id,'create_task（Claude Desktop）','mcp'); const t5=T('t5'); if(t5){ t5.memo=(t5.memo||'')+'\n\n[Claude 追記] 再接続テストは iOS 17.5 以降で安定。'; logHist(t5.id,'append_memo（Claude Desktop）','mcp'); } notify('Claude Desktop が「（Claude から）BLE 検証結果のレビュー」を作成し、「BLE接続の技術検証」にメモを追記しました',t.id,'mcp'); refresh(); select({type:'task',id:t.id,owner:ME}); toast('Claude からの操作を受信：作成 1件・メモ追記 1件（履歴に「Claude 経由」）'); });
+  S.querySelectorAll('[data-revoke]').forEach(b=>b.onclick=async()=>{ if(await confirmDlg('接続をすべて失効しますか？','各クライアントで再接続が必要になります。')) toast('MCP の接続を失効しました（デモ）'); });
+  S.querySelectorAll('[data-calconnect]').forEach(b=>b.onclick=()=>{ settings.calendar.connected=!settings.calendar.connected; toast(settings.calendar.connected?'Google カレンダーに接続しました（デモ）':'接続を解除しました'); renderSettings(); });
+  S.querySelectorAll('[data-calsync]').forEach(b=>b.onclick=()=>{ const c=CA(b.dataset.calsync); c.sync=!c.sync; renderSettings(); });
+  S.querySelectorAll('[data-calentity]').forEach(sel=>sel.onchange=()=>{ CA(sel.dataset.calentity).entity=sel.value||null; toast('事業体を変更しました'); });
+  S.querySelectorAll('[data-calimport]').forEach(sel=>sel.onchange=()=>{ CA(sel.dataset.calimport).importTo=sel.value||null; toast('取り込み先を変更しました'); });
+  S.querySelectorAll('[data-deskdl]').forEach(b=>b.onclick=()=>toast('ORMAP Desk のインストーラを配布します（段階1で用意）'));
+  S.querySelectorAll('[data-desktest]').forEach(b=>b.onclick=()=>toast('ormap://ping → 応答あり（v0.3.1）（デモ）'));
+  S.querySelectorAll('[data-deskterm]').forEach(s=>s.onchange=()=>{ settings.desk.terminal=s.value; toast('ターミナルを '+s.value+' にしました'); });
+  S.querySelectorAll('[data-orgcreate]').forEach(s=>s.onchange=()=>{ org.projectCreate=s.value; toast('案件の作成権限を変更しました'); });
+  S.querySelectorAll('[data-logout]').forEach(b=>b.onclick=()=>{ document.getElementById('dlgSettings').close(); document.getElementById('login').classList.add('show'); });
+  S.querySelectorAll('[data-devices]').forEach(b=>b.onclick=()=>toast('端末：MacBook Pro（この端末）・iPhone・iPad ／ 3台まで（デモ）'));
+  S.querySelectorAll('[data-screset]').forEach(b=>b.onclick=()=>{ SC=JSON.parse(JSON.stringify(SC_DEFAULT)); saveSC(); renderScTable('scTable2',true); toast('初期値に戻しました'); });
+  if(S.querySelector('#scTable2')){ scEditing=true; renderScTable('scTable2',true); }
+  S.querySelectorAll('[data-teamadd]').forEach(b=>b.onclick=async()=>{ const name=prompt('チーム名'); if(!name) return; const r=await pickDlg('メンバーを選ぶ',people.map(p=>({id:p.id,label:p.full,color:p.color})),[ME]); teams.push({id:uid(),name,members:r||[ME]}); rerender(); toast(`チーム「${name}」を作成しました`); });
+  S.querySelectorAll('[data-teammem]').forEach(b=>b.onclick=async()=>{ const t=TM(b.dataset.teammem); const r=await pickDlg(`「${t.name}」のメンバー`,people.map(p=>({id:p.id,label:p.full+(p.external?'（外部）':''),color:p.color})),t.members); if(r){ t.members=r; rerender(); } });
+  S.querySelectorAll('[data-teamren]').forEach(b=>b.onclick=()=>{ const t=TM(b.dataset.teamren); const v=prompt('チーム名',t.name); if(v){ t.name=v; rerender(); } });
+  S.querySelectorAll('[data-teamdel]').forEach(b=>b.onclick=async()=>{ const t=TM(b.dataset.teamdel); if(await confirmDlg(`チーム「${t.name}」を削除しますか？`,'案件の紐づけも外れます。メンバーは残ります。')){ teams=teams.filter(x=>x.id!==t.id); projects.forEach(p=>p.teams=(p.teams||[]).filter(x=>x!==t.id)); if(state.filters.team===t.id) state.filters.team=null; rerender(); } });
+  S.querySelectorAll('[data-invite]').forEach(b=>b.onclick=()=>{ const email=prompt('招待するメールアドレス'); if(!email) return; if(people.some(p=>p.email===email)){ toast('すでに登録されているメールアドレスです'); return; } const name=email.split('@')[0]; people.push({id:uid(),name:name.slice(0,2),full:name+'（招待中）',role:'メンバー',color:'#8A93A3',email,code:'U-'+Math.random().toString(36).slice(2,6).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase(),orgRole:'member'}); rerender(); toast(`${email} に招待メールを送りました（デモ）`); });
+  S.querySelectorAll('[data-extadd]').forEach(b=>b.onclick=()=>{ const code=prompt('社外スタッフのユーザーコード（例 U-XXXX-XXXX）'); if(!code) return; people.push({id:uid(),name:'外',full:'（接続待ち）'+code,role:'外部',color:'#6B7789',external:true,email:'—',code,orgRole:'member'}); rerender(); toast('接続リクエストを送りました。本人が承認すると参加します（デモ）'); });
+  S.querySelectorAll('[data-orgrole]').forEach(s=>s.onchange=()=>{ P(s.dataset.orgrole).orgRole=s.value; toast('権限を変更しました'); });
+  S.querySelectorAll('[data-execflag]').forEach(b=>b.onclick=()=>{ const p=P(b.dataset.execflag); if(p.id===ME&&p.exec){ toast('自分の経営層フラグは外せません（他の管理者が変更します）'); return; } p.exec=!p.exec; const ex=teams.find(t=>t.exec); if(ex){ if(p.exec&&!ex.members.includes(p.id)) ex.members.push(p.id); if(!p.exec) ex.members=ex.members.filter(m=>m!==p.id); } rerender(); });
+  S.querySelectorAll('[data-memdel]').forEach(b=>b.onclick=async()=>{ const p=P(b.dataset.memdel); if(await confirmDlg(`${p.full} を組織から削除しますか？`,'担当タスクはあなたに戻ります。')){ tasks.forEach(t=>{ if(t.a===p.id){ t.a=ME; delete t.req; delete t.reqStatus; } if(t.req===p.id) delete t.req; }); projects.forEach(pr=>pr.members=pr.members.filter(m=>m!==p.id)); teams.forEach(t=>t.members=t.members.filter(m=>m!==p.id)); people=people.filter(x=>x.id!==p.id); if(state.focus===p.id) state.focus=ME; rerender(); } });
+  S.querySelectorAll('[data-cladd]').forEach(b=>b.onclick=()=>{ const name=prompt('クライアント名'); if(!name) return; clients.push({id:uid(),name,color:'#'+Math.floor(Math.random()*0x888888+0x333333).toString(16).padStart(6,'0'),code:'GT-C-'+String(clients.length+1).padStart(4,'0')}); rerender(); });
+  S.querySelectorAll('[data-clren]').forEach(b=>b.onclick=()=>{ const c=CL(b.dataset.clren); const v=prompt('クライアント名',c.name); if(v){ c.name=v; rerender(); } });
+  S.querySelectorAll('[data-clcolor]').forEach(i=>i.oninput=()=>{ CL(i.dataset.clcolor).color=i.value; refresh(); });
+  S.querySelectorAll('[data-cldel]').forEach(b=>b.onclick=async()=>{ const c=CL(b.dataset.cldel); const n=projects.filter(p=>p.client===c.id).length+archived.filter(p=>p.client===c.id).length; if(n){ toast(`${n}件の案件が紐づいているため削除できません。先に案件のクライアントを変更してください`); return; } if(await confirmDlg(`「${c.name}」を削除しますか？`)){ clients=clients.filter(x=>x.id!==c.id); rerender(); } });
+  S.querySelectorAll('[data-newproj]').forEach(b=>b.onclick=()=>{ document.getElementById('dlgSettings').close(); document.getElementById('btnNewProject').click(); });
+  S.querySelectorAll('[data-projopen]').forEach(b=>b.onclick=()=>{ document.getElementById('dlgSettings').close(); select({type:'project',id:b.dataset.projopen,owner:ME}); openBoard(b.dataset.projopen); });
+  S.querySelectorAll('[data-projarch]').forEach(b=>b.onclick=async()=>{ const p=PR(b.dataset.projarch); if(await confirmDlg(`「${p.name}」をアーカイブしますか？`,'タスク・予定も一緒に退避します。「戻す」で復元できます。')){ archivedTasks[p.id]=tasks.filter(t=>t.p===p.id); tasks=tasks.filter(t=>t.p!==p.id); archived.push(p); projects=projects.filter(x=>x.id!==p.id); if(state.board===p.id) closeBoard(); if(state.selected&&(state.selected.id===p.id||archivedTasks[p.id].some(t=>t.id===state.selected.id))){ state.selected=null; renderDetail(); } if(state.filters.project===p.id) state.filters.project='all'; rerender(); } });
+  S.querySelectorAll('[data-projrestore]').forEach(b=>b.onclick=()=>{ const i=archived.findIndex(p=>p.id===b.dataset.projrestore); if(i>=0){ const p=archived[i]; projects.push(p); tasks.push(...(archivedTasks[p.id]||[])); delete archivedTasks[p.id]; archived.splice(i,1); rerender(); toast(`「${p.name}」を復元しました`); } });
+  S.querySelectorAll('[data-export]').forEach(b=>b.onclick=()=>{ const fmtx=b.dataset.export; const data=fmtx==='json'?JSON.stringify({clients,teams,people,projects,tasks},null,2):['id,案件,タイトル,担当,優先度,工数,開始,期限,状態',...tasks.map(t=>[t.id,PR(t.p)?.name,t.title,P(t.a)?.name,PRI[t.pri].n,t.h,toISO(t.start),toISO(t.due),STATUS[t.st]].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data],{type:fmtx==='json'?'application/json':'text/csv'})); a.download=`ormap-export.${fmtx}`; a.click(); toast(`${fmtx.toUpperCase()} を書き出しました`); });
+  S.querySelectorAll('[data-import]').forEach(b=>b.onclick=()=>{ const i=document.createElement('input'); i.type='file'; i.accept='.csv,.json'; i.onchange=()=>toast(`${i.files[0]?.name} を読み込みました（デモ：取り込みは実装時）`); i.click(); });
+  S.querySelectorAll('[data-orgdel]').forEach(b=>b.onclick=async()=>{ if(await confirmDlg('組織を削除しますか？','全データが削除されます。この操作は取り消せません（デモでは何も起きません）。')) toast('（デモ）削除はしません'); });
+  // 設定内のインライン編集（組織名・稼働上限・プロフィール）
+  S.querySelectorAll('.val').forEach(b=>b.onclick=()=>{ const f=b.dataset.f; const cur=b.dataset.obj==='__orgname'?org.name:(b.dataset.obj==='__org'?org.capacity:P(ME)[f]); const v=prompt(b.textContent.replace('✎','').trim()?'新しい値':'値',cur); if(v==null||v==='') return; if(b.dataset.obj==='__orgname') org.name=v; else if(b.dataset.obj==='__org'){ org.capacity=+v||25; state.gcap=org.capacity; document.getElementById('gCap').value=org.capacity; } else P(ME)[f]=v; rerender(); });
+}
+
+/* ============ ヘルプ / ショートカット ============ */
+const SC_DEFAULT={addTask:{key:'n',label:'選択中の案件／タスクにタスクを追加'}, addEvent:{key:'e',label:'予定を追加'}, focusAI:{key:'/',label:'AI アシスタントに入力'}, voice:{key:'v',label:'音声入力を開始（AquaVoice / ブラウザ）'}, search:{key:'k',label:'検索（Ctrl/⌘ と一緒に）',mod:true}, home:{key:'h',label:'自分へ（自分の放射に移動）'}, fitAll:{key:'a',label:'全員を表示'}, viewMap:{key:'1',label:'放射状ビュー'}, viewKanban:{key:'2',label:'カンバン'}, viewGantt:{key:'3',label:'ガント'}, zoomIn:{key:'=',label:'拡大'}, zoomOut:{key:'-',label:'縮小'}, theme:{key:'t',label:'テーマ切替（システム→ライト→ダーク）'}, clear:{key:'x',label:'絞り込みを解除'}, settings:{key:',',label:'設定'}, help:{key:'?',label:'読み方とショートカット'}, escape:{key:'Escape',label:'閉じる／選択解除'}};
+let SC=JSON.parse(JSON.stringify(SC_DEFAULT)); try{ const saved=JSON.parse(localStorage.getItem('ormap-shortcuts')||'null'); if(saved) Object.keys(SC).forEach(k=>{ if(saved[k]) SC[k].key=saved[k]; }); }catch(e){}
+function saveSC(){ try{ localStorage.setItem('ormap-shortcuts',JSON.stringify(Object.fromEntries(Object.entries(SC).map(([k,v])=>[k,v.key])))); }catch(e){} }
+const keyName=k=>({' ':'Space','Escape':'Esc'}[k]||k.toUpperCase());
+let scEditing=false, scListen=null, scTableId='scTable';
+function renderScTable(id='scTable',editing=scEditing){ scTableId=id; const el=document.getElementById(id); if(!el) return; el.innerHTML=Object.entries(SC).map(([k,v])=>`<tr><td>${esc(v.label)}</td><td>${editing?`<button class="key badge" data-sc="${k}"><kbd>${v.mod?'⌘/Ctrl + ':''}${keyName(v.key)}</kbd></button>`:`<kbd>${v.mod?'⌘/Ctrl + ':''}${keyName(v.key)}</kbd>`}</td></tr>`).join(''); const be=document.getElementById('btnScEdit'); if(be) be.textContent=scEditing?'完了':'変更する'; el.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{ el.querySelectorAll('[data-sc]').forEach(x=>x.classList.remove('listening')); b.classList.add('listening'); b.innerHTML='<kbd>キーを押す…</kbd>'; scListen=b.dataset.sc; }); }
+function openHelp(){ scEditing=false; renderScTable('scTable'); document.getElementById('dlgHelp').showModal(); }
+document.getElementById('btnHelp').onclick=openHelp;
+document.querySelectorAll('dialog').forEach(dg=>{ dg.addEventListener('close',()=>{ scListen=null; scEditing=false; }); dg.addEventListener('click',e=>{ if(e.target===dg){ dg.close(); } }); dg.querySelectorAll('[data-xclose]').forEach(b=>b.onclick=()=>dg.close()); });
+document.getElementById('btnScEdit').onclick=()=>{ scEditing=!scEditing; scListen=null; renderScTable('scTable'); };
+document.getElementById('btnScReset').onclick=()=>{ SC=JSON.parse(JSON.stringify(SC_DEFAULT)); saveSC(); renderScTable('scTable'); toast('ショートカットを初期値に戻しました'); };
+document.addEventListener('keydown',e=>{
+  if(scListen){ e.preventDefault(); if(!['Shift','Meta','Control','Alt'].includes(e.key)){ const dup=Object.entries(SC).find(([k,v])=>v.key===e.key&&k!==scListen); if(dup) toast(`「${keyName(e.key)}」は「${dup[1].label}」に使われています`); else { SC[scListen].key=e.key; saveSC(); } scListen=null; renderScTable(scTableId,true); } return; }
+  if((e.metaKey||e.ctrlKey) && e.key===SC.search.key){ e.preventDefault(); qEl.focus(); qEl.select(); return; }
+  const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName) || document.querySelector('dialog[open]');
+  if(e.key===SC.escape.key){ if(document.querySelector('dialog[open]')) return; hideQuick(); closePopovers(); if(typing){ document.activeElement.blur(); return; } if(state.board) closeBoard(); else { state.selected=null; renderDetail(); draw(); } return; }
+  if(typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  const act=Object.entries(SC).find(([k,v])=>!v.mod&&v.key===e.key)?.[0]; if(!act) return; e.preventDefault();
+  ({addTask:quickAddFromShortcut, addEvent:()=>openEventDlg(state.selected?.type==='project'?PR(state.selected.id):(state.selected?PR(T(state.selected.id)?.p):null)), focusAI:()=>{ if(settings.ai.mode==='none'){ toast('AI を使わない設定です。設定 › AI 連携で有効にできます'); return; } document.getElementById('aiBox').classList.remove('collapsed');document.getElementById('chatIn').focus();}, voice:()=>{document.getElementById('aiBox').classList.remove('collapsed'); mic.click();}, home:()=>focusPerson(ME), fitAll, viewMap:()=>setView('map'), viewKanban:()=>setView('kanban'), viewGantt:()=>setView('gantt'), zoomIn:()=>document.getElementById('zoomIn').click(), zoomOut:()=>document.getElementById('zoomOut').click(), theme:cycleTheme, clear:clearFilters, settings:()=>openSettings(secNow), help:openHelp})[act]?.();
+});
+
+/* ============ 案件作成（重複・類似チェック） ============ */
+const norm=s=>s.normalize('NFKC').toLowerCase().replace(/[\s\-_・／/（）()]/g,'');
+const bigrams=s=>{const b=new Set(); for(let i=0;i<s.length-1;i++) b.add(s.slice(i,i+2)); return b;};
+function similarity(a,b){ a=norm(a); b=norm(b); if(!a||!b) return 0; if(a===b) return 1; if(a.includes(b)||b.includes(a)) return 0.85; const A=bigrams(a),B=bigrams(b); let hit=0; A.forEach(x=>{if(B.has(x))hit++;}); return (2*hit)/(A.size+B.size||1); }
+const dlg=document.getElementById('dlgProject');
+document.getElementById('btnNewProject').onclick=()=>{ if(org.projectCreate==='admin' && !['owner','admin'].includes(P(ME).orgRole)){ toast('案件の作成は管理者のみに制限されています（設定 › 組織）'); return; } document.getElementById('npClient').innerHTML='<option value="">（なし）</option>'+clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(''); document.getElementById('npTeams').innerHTML=teams.filter(t=>!t.exec).map(t=>`<label class="chip" style="cursor:pointer"><input type="checkbox" value="${t.id}" style="margin:0" ${teamsOf(ME).includes(t.id)?'checked':''}> ${esc(t.name)}</label>`).join(''); document.getElementById('npMembers').innerHTML=people.filter(p=>p.id!==ME&&canSeePerson(p.id)).map(p=>`<label class="chip" style="cursor:pointer"><input type="checkbox" value="${p.id}" style="margin:0"> ${esc(p.name)}${p.external?'<span class="ext">外部</span>':''}</label>`).join(''); document.getElementById('npName').value=''; document.getElementById('npSimilar').hidden=true; document.getElementById('npSubmit').disabled=false; dlg.showModal(); };
+document.getElementById('npCancel').onclick=()=>dlg.close();
+document.getElementById('npName').oninput=e=>{ const v=e.target.value.trim(); const box=document.getElementById('npSimilar'); if(v.length<2){box.hidden=true;document.getElementById('npSubmit').disabled=false;return;} const hits=projects.map(p=>({p,s:similarity(v,p.name)})).filter(o=>o.s>=0.4).sort((a,b)=>b.s-a.s).slice(0,3); if(!hits.length){box.hidden=true;document.getElementById('npSubmit').disabled=false;return;} box.hidden=false; const exact=hits[0].s===1; box.innerHTML=(exact?'<b>同名の案件がすでにあります。</b>新しく作らず参加してください：':'似た名前の案件があります。同じものなら参加を：')+'<br>'+hits.map(o=>`<button type="button" data-join="${o.p.id}">${esc(o.p.name)}（${o.p.members.map(m=>P(m).name).join('・')}）</button>`).join(' ／ '); document.getElementById('npSubmit').disabled=exact; box.querySelectorAll('[data-join]').forEach(b=>b.onclick=()=>{ const pr=PR(b.dataset.join); if(!pr.members.includes(ME)) pr.members.push(ME); dlg.close(); refresh(); select({type:'project',id:pr.id,owner:ME}); toast(`「${pr.name}」に参加しました（新規作成せず既存に合流）`); }); };
+document.getElementById('frmProject').onsubmit=e=>{ const name=document.getElementById('npName').value.trim(); if(!name){e.preventDefault();return;} const members=[ME,...[...document.querySelectorAll('#npMembers input:checked')].map(i=>i.value)]; const tms=[...document.querySelectorAll('#npTeams input:checked')].map(i=>i.value); const client=document.getElementById('npClient').value||undefined; const pr={id:uid(), code:'GT-2026-'+String(projects.length+archived.length+10).padStart(3,'0'), name, desc:'', client, teams:tms, pri:+document.getElementById('npPri').value, start:d(0), due:d(30), members, vis:document.getElementById('npVis').value, owner:ME, links:[]}; projects.push(pr); refresh(); select({type:'project',id:pr.id,owner:ME}); openBoard(pr.id); toast(`案件「${name}」を作成しました（${members.length}人・${tms.length}チーム）`); };
+
+/* ============ AI アシスタント（ルールベースのモック） ============ */
+const msgs=document.getElementById('msgs');
+function say(text,who='ai',refs=[]){ const m=document.createElement('div'); m.className='msg '+who; m.textContent=text; refs.forEach(r=>{ const b=document.createElement('button'); b.className='ref'; b.textContent=r.label; b.onclick=()=>select({type:'task',id:r.id,owner:ME}); m.appendChild(document.createElement('br')); m.appendChild(b); }); msgs.appendChild(m); msgs.scrollTop=msgs.scrollHeight; }
+const SUGGEST=['今週やらないといけないタスクは？','佐藤に何を頼んでる？','自分がボトルネックになってるのは？','大阪出張のルートを調べてメモに入れて','来週の予定は？'];
+document.getElementById('suggest').innerHTML=SUGGEST.map(s=>`<button type="button">${s}</button>`).join('');
+document.querySelectorAll('#suggest button').forEach(b=>b.onclick=()=>{document.getElementById('chatIn').value=b.textContent;document.getElementById('composer').requestSubmit();});
+document.getElementById('composer').onsubmit=e=>{ e.preventDefault(); const inp=document.getElementById('chatIn'); const q=inp.value.trim(); if(!q) return; say(q,'me'); inp.value=''; setTimeout(()=>answer(q),350); };
+function answer(q){
+  const mine=tasks.filter(t=>!t.parent&&t.a===ME&&t.st!=='done');
+  const proj=projects.find(p=>q.includes(p.name)||q.toLowerCase().includes(p.id));
+  const who=people.find(p=>p.id!==ME&&q.includes(p.name));
+  const refs=ts=>ts.slice(0,6).map(t=>({id:t.id,label:`${t.title}（${t.h}h 〜${fmt(t.due)}）`}));
+  if(/出張|ルート|乗り換え|ホテル/.test(q)){ const ev=tasks.find(t=>isEvent(t)&&t.a===ME&&/出張/.test(t.title)); if(ev){ ev.links=ev.links||[]; if(!ev.links.some(l=>l.label==='乗換案内')) ev.links.push({kind:'url',label:'乗換案内',value:'https://transit.example.jp/route?from=新横浜&to=新大阪'}); ev.memo=(ev.memo||'')+'\n\n[AI 追記] 9/14 の行程を再確認：新横浜 7:32 → 新大阪 9:48（のぞみ）。帰路は 18:30 以降で空席あり。'; refresh(); if(state.selected?.id===ev.id) renderDetail(); say(`「${ev.title}」のルートを調べて、乗換案内のリンクと行程をメモに追記しました。実装ではあなたの Claude が Web 検索・予約サイトを使い、結果を予定に紐づけます。`,'ai',refs([ev])); return; } }
+  if(/予定|スケジュール/.test(q)){ const evs=tasks.filter(t=>isEvent(t)&&t.a===ME&&t.st!=='done'&&daysTo(t.start)<=14).sort((a,b)=>a.start-b.start); say(evs.length?`直近2週間の予定は ${evs.length}件です。\n`+evs.map(t=>`・${fmtT(t.start)} ${t.title}${t.location?'＠'+t.location:''}${t.calendar?'（カレンダー同期済）':''}`).join('\n'):'直近の予定はありません。','ai',refs(evs)); return; }
+  if(/ボトルネック|依頼されて|自分待ち/.test(q)){ const ts=tasks.filter(t=>!t.parent&&t.a===ME&&t.req&&t.req!==ME&&t.st!=='done'); say(ts.length?`あなたが依頼されていて未完了のものは ${ts.length}件です（相手が待っています）。\n`+ts.map(t=>`・${t.title}（${P(t.req).name}から・〜${fmt(t.due)}${t.reqStatus==='pending'?'・未受諾':''}）`).join('\n'):'あなた待ちの依頼はありません。','ai',refs(ts)); return; }
+  if(/追加|作って|登録|入れて/.test(q)){
+    const p=proj||PR('private')||projects[0]; let due=d(7); const m=q.match(/(\d{1,2})日/); if(m) due=new Date(TODAY.getFullYear(),TODAY.getMonth(),+m[1]); if(/明日/.test(q)) due=d(1); if(/金曜/.test(q)){ due=d((5-TODAY.getDay()+7)%7||7); } if(/来週/.test(q)) due=d(7);
+    let title=q.replace(p.name,'').replace(/(を|の)?(追加|作って|登録|入れて)(して)?(ください|くれ|て)?/g,'').replace(/(明日|来週|金曜|\d{1,2}日)(まで)?(に)?/g,'').replace(/^(に|の|で)/,'').trim()||'新しいタスク';
+    const pri=/最優先|至急|絶対/.test(q)?4:(/優先/.test(q)?3:2); const hm=q.match(/(\d+(?:\.\d+)?)\s*(h|時間)/); const h=hm?+hm[1]:2;
+    const t={id:uid(), p:p.id, title, a:ME, pri, h, start:d(0), due, st:'todo', vis:'inherit', links:(p.links||[]).map(l=>({...l,inherited:true}))}; tasks.push(t); logHist(t.id,'AI から作成'); refresh();
+    say(`「${title}」を ${p.name} に追加しました。期限 ${fmt(due)}、優先度「${PRI[pri].n}」、見積 ${h}h。`,'ai',refs([t])); return;
+  }
+  if(who && /頼|依頼|待ち/.test(q)){ const ts=tasks.filter(t=>!t.parent&&t.req===ME&&t.a===who.id&&t.st!=='done'); if(!ts.length){say(`${who.name}さんへの未完了の依頼はありません。`);return;} say(`${who.name}さんに頼んでいるのは ${ts.length}件です。\n`+ts.map(t=>{const pg=progressOf(t);return `・${t.title}（${PR(t.p).name}）〜${fmt(t.due)}${t.reqStatus==='pending'?' 未受諾':''}${pg?` 進捗 ${pg.done}/${pg.total}`:''}${daysTo(t.due)<0?' ⚠期限切れ':''}`;}).join('\n'),'ai',refs(ts)); return; }
+  if(/メモ/.test(q)){ const t=(state.selected&&state.selected.type==='task')?T(state.selected.id):null; if(t&&t.memo){ say(`「${t.title}」のメモ要約：${t.memo.split('\n')[0]}（全${t.memo.length}文字）`); return; } say('メモがあるタスクを選んでから聞いてください。'); return; }
+  if(/工数|ボリューム|どのくらい|残り/.test(q)){ const ts=proj?mine.filter(t=>t.p===proj.id):mine; const h=ts.reduce((a,t)=>a+t.h,0); const w=ts.filter(t=>daysTo(t.due)<=7); say(`${proj?proj.name+'で':''}あなたの未完了は ${ts.length}件、合計 ${h}h です。うち今週期限は ${w.length}件 ${w.reduce((a,t)=>a+t.h,0)}h。稼働5h/日なら約 ${Math.ceil(h/5)} 日分の量です。`,'ai',refs(ts)); return; }
+  if(/今週|今日|期限|やらないと|やること/.test(q)){ const lim=/今日/.test(q)?0:7; let ts=mine.filter(t=>t.due&&daysTo(t.due)<=lim); if(proj) ts=ts.filter(t=>t.p===proj.id); ts.sort((a,b)=>(b.pri-a.pri)||(daysTo(a.due)-daysTo(b.due))); if(!ts.length){say(`${proj?proj.name+'で':''}${lim?'今週':'今日'}期限のタスクはありません。`);return;}
+    const must=ts.filter(t=>t.pri===4); say(`${proj?proj.name+'で':''}${lim?'今週':'今日'}期限は ${ts.length}件（${ts.reduce((a,t)=>a+t.h,0)}h）。最優先は ${must.length}件です。\n`+ts.map(t=>`・${PRI[t.pri].n}｜${t.title}（${PR(t.p).name}）${t.h}h 〜${fmt(t.due)}${daysTo(t.due)<0?' ⚠超過':''}`).join('\n')+`\n\n小さいものから片付けるなら「${[...ts].sort((a,b)=>a.h-b.h)[0].title}」（${[...ts].sort((a,b)=>a.h-b.h)[0].h}h）が最短です。`,'ai',refs(ts)); return; }
+  if(/完了|終わった|できた/.test(q)){ const t=mine.find(t=>q.includes(t.title.slice(0,4))); if(t){ t.st='done'; refresh(); say(`「${t.title}」を完了にしました。${t.req&&t.req!==t.a?P(t.req).name+'さんに通知します。':''}`); return; } }
+  say('できること：「今週のタスクは？」「佐藤に何を頼んでる？」「自分がボトルネックになってるのは？」「来週の予定は？」「大阪出張のルートを調べてメモに入れて」「◯◯を金曜までに追加」「残り工数は？」「◯◯が終わった」。実装ではあなた自身の Claude（MCP 接続）が内容を理解して答えます。');
+}
+const mic=document.getElementById('mic'); const SR=window.SpeechRecognition||window.webkitSpeechRecognition; let rec=null;
+mic.onclick=()=>{ if(settings.voice.mode==='aquavoice'){ if(!settings.desk.connected){ toast('ORMAP Desk が未接続のため AquaVoice を起動できません'); return; } document.getElementById('chatIn').focus(); toast('AquaVoice を起動しました。話し終えると入力欄に文字が入ります（デモ）'); return; } if(!SR){ toast('このブラウザは音声入力に非対応です（Safari/Chromeで動作）'); return; } if(rec){ rec.stop(); return; } rec=new SR(); rec.lang='ja-JP'; rec.interimResults=false; mic.classList.add('on'); rec.onresult=e=>{ document.getElementById('chatIn').value=e.results[0][0].transcript; document.getElementById('composer').requestSubmit(); }; rec.onend=()=>{mic.classList.remove('on');rec=null;}; rec.onerror=()=>{mic.classList.remove('on');rec=null;toast('音声を取得できませんでした');}; rec.start(); };
+
+/* init */
+window.__ready=true; renderRail(); renderDetail(); renderNotifBadge(); resize();
+function applyAiMode(){ const box=document.getElementById('aiBox'); box.hidden=settings.ai.mode==='none'; document.getElementById('aiMode').textContent={mcp:'（MCP：自分の AI）',byok:`（BYOK：${settings.ai.provider||'anthropic'}）`,none:''}[settings.ai.mode]; if(settings.ai.mode==='none') toast('AI アシスタントを非表示にしました。設定 › AI 連携でいつでも戻せます'); }
+applyAiMode();
+say('おはようございます、佐々木さん。今日は 9/9（火）。期限切れが 2件（CRM構築 の顧客インポート修正、D歯科のドメイン契約）、今週の最優先が 4件、9/14 に大阪出張の予定があります。何から片付けますか？');
+state.selected={type:'task',id:'t5',owner:ME}; renderDetail(); requestAnimationFrame(()=>{ fitPerson(ME); });
+</script>
